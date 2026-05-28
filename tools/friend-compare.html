@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>友達との比較カード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 520px) { .compare-grid { grid-template-columns: 1fr; } }
+
+.compare-col {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.compare-col-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 14px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px dotted var(--muted);
+}
+.compare-col textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  padding: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+.diff-card {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.diff-type {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  margin-top: 2px;
+}
+.diff-same { background: #e6f7ed; }
+.diff-diff { background: #e8f4ff; }
+.diff-new { background: #fff3c4; }
+.diff-card textarea { flex: 1; border: 1.5px solid var(--muted); border-radius: 6px; padding: 6px; font-family: var(--font-body); font-size: 12px; min-height: 44px; }
+</style>
+</head>
+<body data-step="6" data-tool-id="friend-compare" data-tool-title="友達との比較カード" data-step-name="結果から考える">
+
+<main>
+  <div class="tool-intro">
+    友達の考えと比べることで、<strong>新しい気づき</strong>が生まれるよ。<br>
+    同じところ・ちがうところ・「なるほど！」を記録しよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📊</span> 考えを比べる</div>
+    <div class="compare-grid">
+      <div class="compare-col" style="border-color: var(--c6);">
+        <div class="compare-col-title" style="color:var(--c6);">👤 自分の考え</div>
+        <div class="import-chip" id="importSelf" style="display:inline-flex;align-items:center;gap:6px;background:#e8f0ff;border:2px solid var(--c6);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">📥 考察ビルダーから取り込む</div>
+        <textarea id="selfThinking" placeholder="例：ふたをしたから酸素がなくなり、燃えられなかった。"></textarea>
+      </div>
+      <div class="compare-col" style="border-color: var(--c7);">
+        <div class="compare-col-title" style="color:var(--c7);">👥 友達の考え</div>
+        <div class="field" style="margin-bottom:6px;">
+          <input type="text" id="friendName" placeholder="名前（任意）" style="font-size:13px;margin-bottom:6px;">
+        </div>
+        <textarea id="friendThinking" placeholder="友達の考えをメモしよう"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🔍</span> 比べてみよう</div>
+    <div id="diffList"></div>
+    <button class="add-row-btn" id="addDiffBtn" style="border:2.5px dashed var(--ink-soft);background:transparent;padding:8px 16px;border-radius:10px;font-family:var(--font-body);font-weight:700;font-size:13px;cursor:pointer;color:var(--ink-soft);width:100%;">＋ 比較を追加</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💡</span> 「なるほど！」と思ったこと</div>
+    <div class="field-help">友達の考えで「そうか！」と思ったこと・自分の考えが変わったこと</div>
+    <textarea id="eureka" placeholder="例：友達は「びんの大きさで火が消えるまでの時間がちがう」と気づいていた。自分は気づかなかった。" style="min-height:70px;"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📝</span> 比較後の考察まとめ</div>
+    <div class="field-help">友達との比較を通じて、自分の考えをアップデートしよう</div>
+    <textarea id="updatedThinking" placeholder="例：友達の考えを聞いて、酸素の量だけでなく、容器の大きさも燃える時間に関係していると気づいた。" style="min-height:70px;"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "friend-compare";
+const DIFF_TYPES = [
+  { id: "same", label: "同じ", cls: "diff-same" },
+  { id: "diff", label: "ちがう", cls: "diff-diff" },
+  { id: "new",  label: "新発見", cls: "diff-new" }
+];
+const DEFAULT = {
+  selfThinking: "", friendName: "", friendThinking: "",
+  diffs: [{ type: "same", text: "" }, { type: "diff", text: "" }],
+  eureka: "", updatedThinking: ""
+};
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.diffs)) state.diffs = DEFAULT.diffs.slice();
+
+function bindSimple() {
+  ["selfThinking","friendName","friendThinking","eureka","updatedThinking"].forEach(k => {
+    const el = document.getElementById(k);
+    el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; });
+  });
+}
+
+function renderDiffs() {
+  const wrap = document.getElementById("diffList");
+  wrap.innerHTML = state.diffs.map((d, i) => `
+    <div class="diff-card">
+      <select data-i="${i}" style="border:2px solid var(--muted);border-radius:8px;padding:6px 4px;font-family:var(--font-body);font-size:12px;font-weight:700;flex-shrink:0;background:white;">
+        ${DIFF_TYPES.map(t => `<option value="${t.id}" ${d.type === t.id ? 'selected' : ''}>${t.label}</option>`).join("")}
+      </select>
+      <textarea data-i="${i}" placeholder="${d.type === 'same' ? '例：どちらも「空気が必要」と考えた' : d.type === 'diff' ? '例：自分は温度、友達は酸素に注目した' : '例：友達だけ「びんの大きさ」に気づいていた'}">${RikaNavi.escapeHTML(d.text)}</textarea>
+      <button data-i="${i}" style="border:2px solid var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;cursor:pointer;font-weight:900;font-size:11px;flex-shrink:0;">✕</button>
+    </div>
+  `).join("");
+
+  wrap.querySelectorAll("select").forEach(sel => {
+    sel.addEventListener("change", () => { state.diffs[parseInt(sel.dataset.i)].type = sel.value; renderDiffs(); });
+  });
+  wrap.querySelectorAll("textarea").forEach(ta => {
+    ta.addEventListener("input", () => { state.diffs[parseInt(ta.dataset.i)].text = ta.value; });
+  });
+  wrap.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => {
+      state.diffs.splice(parseInt(b.dataset.i), 1);
+      if (state.diffs.length === 0) state.diffs.push({ type: "same", text: "" });
+      renderDiffs();
+    });
+  });
+}
+
+document.getElementById("addDiffBtn").addEventListener("click", () => {
+  state.diffs.push({ type: "same", text: "" });
+  renderDiffs();
+});
+
+document.getElementById("importSelf").addEventListener("click", () => {
+  const cb = RikaNavi.load("consideration-builder", { thinkingText: "", summaryText: "" });
+  const text = [cb.thinkingText, cb.summaryText].filter(Boolean).join("。");
+  if (!text) { RikaNavi.toast("考察ビルダーにデータがないよ"); return; }
+  document.getElementById("selfThinking").value = text;
+  state.selfThinking = text;
+  RikaNavi.toast("📥 考察を取り込んだよ！");
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const lines = ["【友達との比較】"];
+  lines.push(`自分の考え：${state.selfThinking}`);
+  if (state.friendName) lines.push(`友達（${state.friendName}）の考え：${state.friendThinking}`);
+  else lines.push(`友達の考え：${state.friendThinking}`);
+  if (state.diffs.length) {
+    lines.push("", "比較：");
+    state.diffs.forEach(d => { if (d.text.trim()) lines.push(`・[${d.type}] ${d.text}`); });
+  }
+  if (state.eureka.trim()) lines.push("", `なるほど：${state.eureka}`);
+  if (state.updatedThinking.trim()) lines.push("", `比較後の考え：${state.updatedThinking}`);
+  RikaNavi.copy(lines.join("\n"));
+});
+
+bindSimple();
+renderDiffs();
+</script>
+</body>
+</html>

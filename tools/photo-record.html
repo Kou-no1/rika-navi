@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>写真記録カード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.photo-card {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.photo-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-bottom: 2px solid var(--muted);
+  display: block;
+}
+.photo-card-body { padding: 10px; }
+.photo-time { font-size: 10px; color: var(--ink-soft); font-weight: 700; margin-bottom: 4px; }
+.photo-card textarea {
+  width: 100%;
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  padding: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  min-height: 50px;
+  resize: vertical;
+}
+.photo-card-del {
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.drop-zone {
+  border: 3px dashed var(--c5);
+  border-radius: 14px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.drop-zone:hover { background: #f0fdf4; }
+.drop-zone input[type="file"] { display: none; }
+.drop-zone-icon { font-size: 40px; display: block; margin-bottom: 8px; }
+</style>
+</head>
+<body data-step="5" data-tool-id="photo-record" data-tool-title="写真記録カード" data-step-name="分かったことを整理する">
+
+<main>
+  <div class="tool-intro">
+    実験の様子を<strong>写真</strong>で記録しよう。<br>
+    写真にコメントをつけると、結果整理や発表に使いやすいよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📸</span> 写真を追加</div>
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-zone-icon">📷</span>
+      <div style="font-weight:700;margin-bottom:6px;">ここをタップして写真を選ぶ</div>
+      <div style="font-size:12px;color:var(--ink-soft);">複数まとめて選べるよ（PNG・JPG・GIF対応）</div>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
+    <div class="hint-box" style="margin-top:10px;">
+      💡 写真の使い方アイデア：実験前・中・後の様子 / 結果の変化 / 測定値が写った画面
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🖼️</span> 記録した写真 <span id="photoCount" style="font-size:13px;font-weight:500;color:var(--ink-soft);"></span></div>
+    <div class="photo-grid" id="photoGrid">
+      <div style="color:var(--ink-soft);text-align:center;padding:20px;grid-column:1/-1;">まだ写真がないよ</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">すべてクリア</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="warning-box">
+    ⚠️ 写真データはブラウザのLocalStorageに保存されます。容量が大きい写真はサイズが縮小されます。学校のGoogleドライブやClassroomとの連携はPhase 3で対応予定です。
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "photo-record";
+const DEFAULT = { photos: [] };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!state.photos) state.photos = [];
+
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+
+dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.style.background = "#e6f9ee"; });
+dropZone.addEventListener("dragleave", () => dropZone.style.background = "");
+dropZone.addEventListener("drop", e => { e.preventDefault(); dropZone.style.background = ""; handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener("change", () => handleFiles(fileInput.files));
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      // 縮小処理
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 600;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          const ratio = Math.min(MAX/w, MAX/h);
+          w = Math.round(w * ratio); h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        state.photos.push({
+          id: Date.now() + Math.random(),
+          src: canvas.toDataURL("image/jpeg", 0.75),
+          comment: "",
+          time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+          name: file.name
+        });
+        renderPhotos();
+        RikaNavi.save(TOOL_ID, state);
+        RikaNavi.toast("📷 追加したよ！");
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotos() {
+  const grid = document.getElementById("photoGrid");
+  document.getElementById("photoCount").textContent = state.photos.length ? `（${state.photos.length}枚）` : "";
+  if (!state.photos.length) {
+    grid.innerHTML = `<div style="color:var(--ink-soft);text-align:center;padding:20px;grid-column:1/-1;">まだ写真がないよ</div>`;
+    return;
+  }
+  grid.innerHTML = state.photos.map(p => `
+    <div class="photo-card">
+      <img src="${p.src}" alt="${RikaNavi.escapeHTML(p.name)}">
+      <div class="photo-card-body">
+        <div class="photo-time">📍 ${p.time}</div>
+        <textarea data-id="${p.id}" placeholder="何を撮った？何が分かる？">${RikaNavi.escapeHTML(p.comment)}</textarea>
+        <button class="photo-card-del" data-id="${p.id}">🗑️ 削除</button>
+      </div>
+    </div>
+  `).join("");
+
+  grid.querySelectorAll("textarea").forEach(ta => {
+    ta.addEventListener("input", () => {
+      const p = state.photos.find(x => String(x.id) === String(ta.dataset.id));
+      if (p) { p.comment = ta.value; RikaNavi.save(TOOL_ID, state); }
+    });
+  });
+  grid.querySelectorAll(".photo-card-del").forEach(b => {
+    b.addEventListener("click", () => {
+      state.photos = state.photos.filter(p => String(p.id) !== String(b.dataset.id));
+      RikaNavi.save(TOOL_ID, state);
+      renderPhotos();
+    });
+  });
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の写真を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("すべての写真を削除しますか？")) return;
+  state.photos = [];
+  RikaNavi.save(TOOL_ID, state);
+  renderPhotos();
+});
+
+renderPhotos();
+</script>
+</body>
+</html>

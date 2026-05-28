@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全確認チェック ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.phase-tabs { display: flex; gap: 0; margin-bottom: 16px; border: 3px solid var(--line); border-radius: 12px; overflow: hidden; }
+.phase-tab {
+  flex: 1;
+  padding: 10px 6px;
+  border: none;
+  border-right: 2px solid var(--line);
+  background: var(--bg-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s;
+}
+.phase-tab:last-child { border-right: none; }
+.phase-tab.active { background: var(--c4); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+
+.progress-strip {
+  height: 12px;
+  background: var(--muted-bg);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--c5);
+  transition: width 0.3s;
+  border-radius: 6px;
+}
+.progress-label {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.emergency-box {
+  background: #fff0f0;
+  border: 3px solid var(--c4);
+  border-radius: 12px;
+  padding: 14px;
+}
+.emergency-title { font-weight: 900; color: var(--c4); font-size: 16px; margin-bottom: 8px; }
+.emergency-steps { counter-reset: step; list-style: none; }
+.emergency-steps li {
+  counter-increment: step;
+  padding: 8px 10px 8px 36px;
+  position: relative;
+  font-size: 14px;
+  border-bottom: 1px dashed var(--muted);
+}
+.emergency-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 22px;
+  height: 22px;
+  background: var(--c4);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 12px;
+}
+</style>
+</head>
+<body data-step="4" data-tool-id="safety-during" data-tool-title="安全確認チェック" data-step-name="実験する">
+
+<main>
+  <div class="tool-intro">
+    実験の<strong>前・中・後</strong>で安全を確認しよう。<br>
+    今どの段階か選んで、チェックリストを進めよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🚦</span> 今はどの段階？</div>
+    <div class="phase-tabs" id="phaseTabs">
+      <button class="phase-tab active" data-phase="before">① 実験前</button>
+      <button class="phase-tab" data-phase="during">② 実験中</button>
+      <button class="phase-tab" data-phase="after">③ 実験後</button>
+    </div>
+
+    <div class="progress-label" id="progressLabel">0/0 チェック済み</div>
+    <div class="progress-strip"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+    <ul class="check-list" id="checkList"></ul>
+
+    <div class="btn-row">
+      <button class="btn btn-small" id="resetBtn">このフェーズをリセット</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🚨</span> もし事故・けがが起きたら</div>
+    <div class="emergency-box">
+      <div class="emergency-title">⚠️ 緊急時の対応手順</div>
+      <ol class="emergency-steps">
+        <li>すぐに「先生！」と大きな声で呼ぶ</li>
+        <li>実験を止め、安全な場所へ移動する</li>
+        <li>やけど→すぐに水で冷やす（10〜15分）</li>
+        <li>薬品が目に入った→水でよく洗い流す</li>
+        <li>切り傷→押さえて先生に見せる</li>
+        <li>自分だけで判断しない</li>
+      </ol>
+    </div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const PHASES = {
+  before: {
+    label: "実験前",
+    items: [
+      "実験計画を全員で確認した",
+      "役割分担が決まっている",
+      "安全チェックリスト（Step3）を確認した",
+      "保護メガネ・手袋などの安全具を用意した",
+      "緊急時の対応（先生を呼ぶ場所など）を確認した",
+      "道具の使い方を確認した",
+      "ぬれぞうきん・消火器などの場所を確認した"
+    ]
+  },
+  during: {
+    label: "実験中",
+    items: [
+      "全員が集中して実験している",
+      "ふざけている人はいない",
+      "安全な姿勢で実験している（顔を近づけすぎない等）",
+      "結果はすぐに記録している",
+      "異常（においや色の変化など）に気づいたら報告する",
+      "道具を正しく使っている",
+      "時間係が時間を管理している"
+    ]
+  },
+  after: {
+    label: "実験後",
+    items: [
+      "火・電気・ガスを確実に消した",
+      "薬品を適切に処理・保管した",
+      "ガラス器具を安全に洗った（割れていないか確認）",
+      "道具を元の場所に戻した",
+      "実験台を拭いて片付けた",
+      "けが・体調不良がなかったか確認した",
+      "記録が全員そろっているか確認した"
+    ]
+  }
+};
+
+const TOOL_ID = "safety-during";
+const DEFAULT = { currentPhase: "before", checks: { before: {}, during: {}, after: {} } };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!state.checks) state.checks = { before: {}, during: {}, after: {} };
+
+function renderPhase() {
+  const phase = state.currentPhase;
+  const items = PHASES[phase].items;
+  const checkMap = state.checks[phase] || {};
+
+  const ul = document.getElementById("checkList");
+  ul.innerHTML = items.map((item, i) => {
+    const done = !!checkMap[i];
+    return `
+      <li class="check-item ${done ? 'checked' : ''}" data-i="${i}">
+        <input type="checkbox" ${done ? 'checked' : ''}>
+        <span class="check-item-text">${RikaNavi.escapeHTML(item)}</span>
+      </li>
+    `;
+  }).join("");
+
+  ul.querySelectorAll(".check-item").forEach(li => {
+    const toggle = () => {
+      const i = parseInt(li.dataset.i);
+      const cb = li.querySelector("input");
+      checkMap[i] = cb.checked;
+      li.classList.toggle("checked", cb.checked);
+      updateProgress();
+      RikaNavi.save(TOOL_ID, state);
+    };
+    li.addEventListener("click", e => { if (e.target.tagName !== "INPUT") { const cb = li.querySelector("input"); cb.checked = !cb.checked; toggle(); } });
+    li.querySelector("input").addEventListener("change", toggle);
+  });
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const phase = state.currentPhase;
+  const items = PHASES[phase].items;
+  const checkMap = state.checks[phase] || {};
+  const done = items.reduce((acc, _, i) => acc + (checkMap[i] ? 1 : 0), 0);
+  const total = items.length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById("progressFill").style.width = `${pct}%`;
+  let label = `${done}/${total} チェック済み`;
+  if (pct === 100) label += " ✅ 完了！";
+  document.getElementById("progressLabel").textContent = label;
+}
+
+document.getElementById("phaseTabs").querySelectorAll(".phase-tab").forEach(t => {
+  t.addEventListener("click", () => {
+    state.currentPhase = t.dataset.phase;
+    document.querySelectorAll(".phase-tab").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    renderPhase();
+  });
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (!confirm(`「${PHASES[state.currentPhase].label}」のチェックをリセットしますか？`)) return;
+  state.checks[state.currentPhase] = {};
+  RikaNavi.save(TOOL_ID, state);
+  renderPhase();
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のチェックを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+renderPhase();
+</script>
+</body>
+</html>

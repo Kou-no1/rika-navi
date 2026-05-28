@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>結果整理ボード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.import-bar {
+  background: #e8f4ff;
+  border: 2px solid var(--c1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.result-table-wrap { overflow-x: auto; }
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 400px;
+}
+.result-table th, .result-table td {
+  border: 2.5px solid var(--line);
+  padding: 0;
+}
+.result-table th {
+  background: var(--c5);
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 13px;
+  padding: 8px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,.2);
+}
+.result-table td input {
+  width: 100%;
+  border: none;
+  padding: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: transparent;
+}
+.result-table td input:focus { background: #fffce8; outline: none; }
+.result-table tr:nth-child(even) td { background: #f8fdf4; }
+.add-col-btn, .add-row-btn {
+  border: 2.5px dashed var(--ink-soft);
+  background: transparent;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin-top: 6px;
+}
+.add-col-btn:hover, .add-row-btn:hover { background: var(--muted-bg); }
+
+.finding-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: white;
+  border: 2px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.finding-row textarea { flex: 1; min-height: 44px; border: 1.5px solid var(--muted); border-radius: 6px; padding: 6px 8px; font-family: var(--font-body); font-size: 13px; }
+.finding-type { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; border: 1.5px solid var(--line); white-space: nowrap; align-self: flex-start; margin-top: 4px; }
+</style>
+</head>
+<body data-step="5" data-tool-id="result-board" data-tool-title="結果整理ボード" data-step-name="分かったことを整理する">
+
+<main>
+  <div class="tool-intro">
+    実験で<strong>見えたこと・測ったこと</strong>を整理しよう。<br>
+    ここには<strong>事実だけ</strong>を書く。「なぜ？」という考えは次のStep6で！
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📥</span> 観察メモから取り込む</div>
+    <div class="import-bar">
+      <span>「観察メモ」で書いたデータを取り込めるよ</span>
+      <button class="btn btn-small" id="importBtn">📥 取り込む</button>
+    </div>
+    <div id="importedMemos"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📊</span> 結果を表に整理する</div>
+    <div class="field-help">列の名前を変えて、自分の実験に合う表にしよう</div>
+    <div class="result-table-wrap">
+      <table class="result-table" id="resultTable"></table>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="add-row-btn" id="addRowBtn">＋ 行を追加</button>
+      <button class="add-col-btn" id="addColBtn">＋ 列を追加</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💬</span> 気づいたこと（事実のみ）</div>
+    <div class="field-help">「〜でした」「〜だった」という事実で書こう。「〜だから」という考えは考察で！</div>
+    <div id="findingsList"></div>
+    <button class="add-row-btn" id="addFindingBtn">＋ 気づきを追加</button>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>結果と考察の違い</strong>：<br>
+    ✅ 結果（事実）：「水の温度は80℃になった」「ビーカーAの方が早く沸騰した」<br>
+    ❌ 考察（考え）：「火が強かったから早く沸騰した」← これはStep6で書く！
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📤</span> エクスポート</div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 結果をコピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "result-board";
+const DEFAULT = {
+  headers: ["条件", "結果①", "結果②", "メモ"],
+  rows: [
+    ["A", "", "", ""],
+    ["B", "", "", ""]
+  ],
+  findings: [{ text: "", type: "see" }]
+};
+
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!state.headers) state.headers = DEFAULT.headers.slice();
+if (!state.rows) state.rows = DEFAULT.rows.map(r => r.slice());
+if (!state.findings) state.findings = [{ text: "", type: "see" }];
+
+function renderTable() {
+  const table = document.getElementById("resultTable");
+  const colCount = state.headers.length;
+
+  // ヘッダー行
+  let html = `<thead><tr>`;
+  state.headers.forEach((h, ci) => {
+    html += `<th><input type="text" data-row="header" data-col="${ci}" value="${RikaNavi.escapeHTML(h)}" style="background:transparent;color:white;font-weight:900;font-family:var(--font-display);text-align:center;width:100%;border:none;padding:6px;"></th>`;
+  });
+  html += `<th style="width:36px;background:var(--c5);"></th></tr></thead>`;
+
+  // データ行
+  html += `<tbody>`;
+  state.rows.forEach((row, ri) => {
+    html += `<tr>`;
+    for (let ci = 0; ci < colCount; ci++) {
+      html += `<td><input type="text" data-row="${ri}" data-col="${ci}" value="${RikaNavi.escapeHTML(row[ci] || '')}"></td>`;
+    }
+    html += `<td style="text-align:center;"><button class="del-row-btn" data-ri="${ri}" style="border:none;background:transparent;cursor:pointer;font-weight:900;color:var(--ink-soft);">✕</button></td>`;
+    html += `</tr>`;
+  });
+  html += `</tbody>`;
+  table.innerHTML = html;
+
+  table.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const row = inp.dataset.row;
+      const col = parseInt(inp.dataset.col);
+      if (row === "header") state.headers[col] = inp.value;
+      else state.rows[parseInt(row)][col] = inp.value;
+    });
+  });
+
+  table.querySelectorAll(".del-row-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      state.rows.splice(parseInt(b.dataset.ri), 1);
+      if (state.rows.length === 0) state.rows.push(new Array(state.headers.length).fill(""));
+      renderTable();
+    });
+  });
+}
+
+document.getElementById("addRowBtn").addEventListener("click", () => {
+  state.rows.push(new Array(state.headers.length).fill(""));
+  renderTable();
+});
+
+document.getElementById("addColBtn").addEventListener("click", () => {
+  state.headers.push("列" + (state.headers.length + 1));
+  state.rows.forEach(r => r.push(""));
+  renderTable();
+});
+
+function renderFindings() {
+  const wrap = document.getElementById("findingsList");
+  const TYPES = { see: { label: "👁️ 見えた", bg: "#d4eeff" }, measure: { label: "📏 測定値", bg: "#d4ffd8" }, notice: { label: "💡 気づき", bg: "#fff3c4" } };
+  wrap.innerHTML = state.findings.map((f, i) => `
+    <div class="finding-row">
+      <select data-fi="${i}" style="border:2px solid var(--muted);border-radius:8px;padding:6px;font-family:var(--font-body);font-size:12px;background:${TYPES[f.type]?.bg || '#fff'}">
+        ${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${f.type === k ? 'selected' : ''}>${v.label}</option>`).join("")}
+      </select>
+      <textarea data-fi="${i}" placeholder="例：水の温度は5分で80℃になった。">${RikaNavi.escapeHTML(f.text)}</textarea>
+      <button data-fi="${i}" style="border:2px solid var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;cursor:pointer;font-weight:900;align-self:flex-start;margin-top:4px;">✕</button>
+    </div>
+  `).join("");
+
+  wrap.querySelectorAll("textarea").forEach(ta => {
+    ta.addEventListener("input", () => { state.findings[parseInt(ta.dataset.fi)].text = ta.value; });
+  });
+  wrap.querySelectorAll("select").forEach(sel => {
+    sel.addEventListener("change", () => { state.findings[parseInt(sel.dataset.fi)].type = sel.value; renderFindings(); });
+  });
+  wrap.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => {
+      state.findings.splice(parseInt(b.dataset.fi), 1);
+      if (state.findings.length === 0) state.findings.push({ text: "", type: "see" });
+      renderFindings();
+    });
+  });
+}
+
+document.getElementById("addFindingBtn").addEventListener("click", () => {
+  state.findings.push({ text: "", type: "see" });
+  renderFindings();
+});
+
+// 観察メモ取り込み
+document.getElementById("importBtn").addEventListener("click", () => {
+  const memoState = RikaNavi.load("observation-memo", { memos: [] });
+  const memos = (memoState.memos || []).filter(m => m.type === "see" || m.type === "measure");
+  const wrap = document.getElementById("importedMemos");
+  if (!memos.length) {
+    RikaNavi.toast("取り込めるメモがないよ（観察メモに「見えたこと」「測った数」を書いてね）");
+    return;
+  }
+  memos.forEach(m => {
+    if (!state.findings.find(f => f.text === m.text)) {
+      state.findings.push({ text: m.text, type: m.type === "measure" ? "measure" : "see" });
+    }
+  });
+  renderFindings();
+  RikaNavi.toast(`📥 ${memos.length}件のメモを取り込んだよ！`);
+  wrap.innerHTML = `<div class="hint-box">✓ 観察メモから ${memos.length} 件を取り込みました。下の「気づいたこと」に追加されたよ。</div>`;
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の結果を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const lines = ["【結果】", "＜表＞"];
+  lines.push(state.headers.join("\t"));
+  state.rows.forEach(r => lines.push(r.join("\t")));
+  if (state.findings.length) {
+    lines.push("", "＜気づいたこと＞");
+    state.findings.forEach(f => { if (f.text.trim()) lines.push(`・${f.text}`); });
+  }
+  RikaNavi.copy(lines.join("\n"));
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("結果をすべてクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  renderTable();
+  renderFindings();
+});
+
+renderTable();
+renderFindings();
+</script>
+</body>
+</html>

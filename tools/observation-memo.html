@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>観察メモ ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.memo-header-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.timer-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 28px;
+  background: var(--ink);
+  color: var(--accent);
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 3px solid var(--line);
+  letter-spacing: 0.1em;
+  min-width: 120px;
+  text-align: center;
+}
+.timer-btns { display: flex; gap: 6px; }
+
+.memo-list { display: flex; flex-direction: column; gap: 10px; }
+.memo-entry {
+  background: white;
+  border: 2.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+.memo-entry-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  background: var(--c4);
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+.memo-entry textarea {
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  min-height: 48px;
+  width: 100%;
+}
+.memo-entry-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+.memo-type-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.type-btn {
+  padding: 6px 12px;
+  border: 2.5px solid var(--line);
+  border-radius: 20px;
+  background: var(--bg-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.type-btn.active { background: var(--c4); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+
+.memo-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1.5px solid var(--line);
+  margin-right: 4px;
+}
+.badge-see { background: #d4eeff; }
+.badge-measure { background: #d4ffd8; }
+.badge-notice { background: #fff3c4; }
+.badge-problem { background: #ffe0e0; }
+</style>
+</head>
+<body data-step="4" data-tool-id="observation-memo" data-tool-title="観察メモ" data-step-name="実験する">
+
+<main>
+  <div class="tool-intro">
+    実験中に<strong>見えたこと・測ったこと・気づいたこと</strong>をすぐメモしよう。<br>
+    タイマーも使えるよ。メモはあとで整理できる。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">⏱️</span> タイマー</div>
+    <div class="memo-header-bar">
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-btns">
+        <button class="btn btn-strong" id="timerStartBtn">▶ スタート</button>
+        <button class="btn" id="timerStopBtn">⏸ 止める</button>
+        <button class="btn btn-small" id="timerResetBtn">↺ リセット</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📝</span> 今すぐメモを追加</div>
+    <div class="section-subtitle">メモの種類を選んでから書こう</div>
+    <div class="memo-type-btns">
+      <button class="type-btn active" data-type="see">👁️ 見えたこと</button>
+      <button class="type-btn" data-type="measure">📏 測った数</button>
+      <button class="type-btn" data-type="notice">💡 気づいたこと</button>
+      <button class="type-btn" data-type="problem">❗ うまくいかなかった</button>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <textarea id="newMemoText" style="flex:1;min-height:60px;padding:10px;border:2.5px solid var(--line);border-radius:10px;font-family:var(--font-body);font-size:14px;" placeholder="例：水の温度が60℃になった。泡が出てきた。"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-strong" id="addMemoBtn">＋ メモを追加</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📋</span> メモ一覧</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--ink-soft);">フィルター：</span>
+      <button class="btn btn-small filter-btn active" data-filter="all">すべて</button>
+      <button class="btn btn-small filter-btn" data-filter="see">👁️ 見えた</button>
+      <button class="btn btn-small filter-btn" data-filter="measure">📏 測定</button>
+      <button class="btn btn-small filter-btn" data-filter="notice">💡 気づき</button>
+      <button class="btn btn-small filter-btn" data-filter="problem">❗ 問題</button>
+    </div>
+    <div class="memo-list" id="memoList">
+      <div class="preview-empty" id="emptyMsg">まだメモがないよ。実験しながら追加しよう！</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📤</span> まとめてコピー</div>
+    <div class="section-subtitle">「分かったことを整理する」ツールに貼り付けよう</div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearAllBtn">すべてクリア</button>
+      <button class="btn btn-copy" id="copyAllBtn">📋 全メモをコピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "observation-memo";
+const TYPE_LABELS = { see: "👁️ 見えたこと", measure: "📏 測った数", notice: "💡 気づき", problem: "❗ 問題" };
+const TYPE_BADGES = { see: "badge-see", measure: "badge-measure", notice: "badge-notice", problem: "badge-problem" };
+const DEFAULT = { memos: [], timerSec: 0 };
+
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.memos)) state.memos = [];
+let currentType = "see";
+let currentFilter = "all";
+
+// タイマー
+let timerInterval = null;
+let timerRunning = false;
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function updateTimerDisplay() {
+  document.getElementById("timerDisplay").textContent = formatTime(state.timerSec);
+}
+
+document.getElementById("timerStartBtn").addEventListener("click", () => {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerInterval = setInterval(() => {
+    state.timerSec++;
+    updateTimerDisplay();
+  }, 1000);
+});
+
+document.getElementById("timerStopBtn").addEventListener("click", () => {
+  clearInterval(timerInterval);
+  timerRunning = false;
+});
+
+document.getElementById("timerResetBtn").addEventListener("click", () => {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  state.timerSec = 0;
+  updateTimerDisplay();
+});
+
+updateTimerDisplay();
+
+// 種類ボタン
+document.querySelectorAll(".type-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    currentType = b.dataset.type;
+    document.querySelectorAll(".type-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+  });
+});
+
+// メモ追加
+document.getElementById("addMemoBtn").addEventListener("click", () => {
+  const text = document.getElementById("newMemoText").value.trim();
+  if (!text) { RikaNavi.toast("メモの内容を書いてね"); return; }
+  state.memos.push({ id: Date.now(), type: currentType, text, time: formatTime(state.timerSec) });
+  document.getElementById("newMemoText").value = "";
+  RikaNavi.save(TOOL_ID, state);
+  renderMemos();
+  RikaNavi.toast("📝 メモを追加したよ！");
+});
+
+// フィルター
+document.querySelectorAll(".filter-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    currentFilter = b.dataset.filter;
+    document.querySelectorAll(".filter-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    renderMemos();
+  });
+});
+
+function renderMemos() {
+  const list = document.getElementById("memoList");
+  const filtered = currentFilter === "all" ? state.memos : state.memos.filter(m => m.type === currentFilter);
+  document.getElementById("emptyMsg").style.display = filtered.length ? "none" : "block";
+  list.innerHTML = filtered.length ? "" : list.innerHTML;
+  if (!filtered.length) return;
+
+  list.innerHTML = filtered.slice().reverse().map(m => `
+    <div class="memo-entry">
+      <button class="memo-entry-del" data-id="${m.id}">✕</button>
+      <div>
+        <span class="memo-badge ${TYPE_BADGES[m.type]}">${TYPE_LABELS[m.type]}</span>
+        <span class="memo-entry-time">${m.time}</span>
+      </div>
+      <textarea data-id="${m.id}">${RikaNavi.escapeHTML(m.text)}</textarea>
+    </div>
+  `).join("");
+
+  list.querySelectorAll(".memo-entry-del").forEach(b => {
+    b.addEventListener("click", () => {
+      state.memos = state.memos.filter(m => String(m.id) !== String(b.dataset.id));
+      RikaNavi.save(TOOL_ID, state);
+      renderMemos();
+    });
+  });
+
+  list.querySelectorAll("textarea").forEach(ta => {
+    ta.addEventListener("input", () => {
+      const m = state.memos.find(x => String(x.id) === String(ta.dataset.id));
+      if (m) { m.text = ta.value; RikaNavi.save(TOOL_ID, state); }
+    });
+  });
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のメモを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyAllBtn").addEventListener("click", () => {
+  if (!state.memos.length) { RikaNavi.toast("メモがないよ"); return; }
+  const lines = ["【観察メモ】"];
+  state.memos.forEach(m => lines.push(`[${m.time}] ${TYPE_LABELS[m.type]}：${m.text}`));
+  RikaNavi.copy(lines.join("\n"));
+});
+
+document.getElementById("clearAllBtn").addEventListener("click", () => {
+  if (!confirm("全メモをクリアしますか？")) return;
+  state.memos = [];
+  state.timerSec = 0;
+  updateTimerDisplay();
+  RikaNavi.save(TOOL_ID, state);
+  renderMemos();
+});
+
+renderMemos();
+</script>
+</body>
+</html>

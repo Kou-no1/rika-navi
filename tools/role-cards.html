@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>役割分担カード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.role-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.role-card {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+.role-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  background: var(--card-color, var(--c4));
+  border-radius: 13px 13px 0 0;
+}
+.role-icon { font-size: 40px; margin: 10px 0 6px; display: block; }
+.role-name { font-family: var(--font-display); font-weight: 900; font-size: 16px; color: var(--card-color, var(--c4)); margin-bottom: 6px; }
+.role-member { font-size: 18px; font-weight: 900; margin: 6px 0; min-height: 1.4em; }
+.role-duties { font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+.role-member-input {
+  width: 100%;
+  border: 2px solid var(--muted);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  margin: 4px 0;
+}
+.role-member-input:focus { outline: none; border-color: var(--c4); background: #fff8e0; }
+
+.checklist { list-style: none; text-align: left; margin-top: 8px; }
+.checklist li {
+  font-size: 11px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--muted);
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+.checklist li::before { content: "□"; flex-shrink: 0; }
+.checklist li.done { text-decoration: line-through; color: var(--ink-soft); }
+.checklist li.done::before { content: "✓"; color: var(--ok); }
+</style>
+</head>
+<body data-step="4" data-tool-id="role-cards" data-tool-title="役割分担カード" data-step-name="実験する">
+
+<main>
+  <div class="tool-intro">
+    実験中の<strong>役割と仕事内容</strong>を確認しよう。<br>
+    名前を入れると自分のカードになるよ。役割ルーレットの結果と合わせて使おう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎭</span> 今日の役割一覧</div>
+    <div class="role-cards" id="roleCards"></div>
+    <div class="btn-row">
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">⚠️</span> 実験中のルール</div>
+    <ul class="check-list" id="ruleList"></ul>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const ROLES = [
+  {
+    id: "leader", icon: "👑", name: "実験リーダー", color: "var(--c4)",
+    duties: ["実験の順番を指示する", "困ったときは先生を呼ぶ", "みんなが役割を果たしているか確認する"],
+    rules: ["進め方を事前に確認しておく", "一人で判断しすぎない、みんなと相談する"]
+  },
+  {
+    id: "record", icon: "📝", name: "記録係", color: "var(--c6)",
+    duties: ["結果を表や数字で書く", "気づいたことをメモする", "写真・動画を撮る"],
+    rules: ["見たままを正確に書く", "考えたことは別に書く"]
+  },
+  {
+    id: "tools", icon: "🔧", name: "道具係", color: "var(--c3)",
+    duties: ["実験道具の準備・片付け", "道具を正しく使う", "道具を丁寧に扱う"],
+    rules: ["道具をむやみに触らない", "片付けは全員で行う"]
+  },
+  {
+    id: "time", icon: "⏱️", name: "時間係", color: "var(--c8)",
+    duties: ["時間を測る", "時間になったら知らせる", "記録係と協力して時刻を記録する"],
+    rules: ["タイマーをあらかじめ準備する", "「あと〇分」と声をかける"]
+  },
+  {
+    id: "present", icon: "📣", name: "発表係", color: "var(--c7)",
+    duties: ["実験結果をまとめる", "クラスへ発表する", "質問に答える"],
+    rules: ["結果と考えを分けて発表する", "理由をつけて話す"]
+  },
+  {
+    id: "safety", icon: "🦺", name: "安全確認係", color: "var(--c5)",
+    duties: ["安全チェックリストを確認する", "危険な行動を止める", "もし事故があれば先生を呼ぶ"],
+    rules: ["最後まで安全に気をつける", "目立たなくてもとても大事な役割"]
+  }
+];
+
+const RULES_COMMON = [
+  "勝手に実験を始めない（合図を待つ）",
+  "実験中はふざけない",
+  "他の班の邪魔をしない",
+  "終わったら道具を片付ける",
+  "結果はその場で記録する"
+];
+
+const TOOL_ID = "role-cards";
+const DEFAULT = { members: {}, rulesDone: [] };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!state.members) state.members = {};
+if (!Array.isArray(state.rulesDone)) state.rulesDone = [];
+
+function renderCards() {
+  const wrap = document.getElementById("roleCards");
+  wrap.innerHTML = ROLES.map(r => `
+    <div class="role-card" style="--card-color:${r.color}">
+      <span class="role-icon">${r.icon}</span>
+      <div class="role-name">${r.name}</div>
+      <input class="role-member-input" data-id="${r.id}" value="${RikaNavi.escapeHTML(state.members[r.id] || '')}" placeholder="名前を入れよう">
+      <ul class="checklist">
+        ${r.duties.map(d => `<li>${d}</li>`).join("")}
+      </ul>
+    </div>
+  `).join("");
+
+  wrap.querySelectorAll(".role-member-input").forEach(inp => {
+    inp.addEventListener("input", () => {
+      state.members[inp.dataset.id] = inp.value;
+    });
+  });
+}
+
+function renderRules() {
+  const ul = document.getElementById("ruleList");
+  ul.innerHTML = RULES_COMMON.map((r, i) => {
+    const done = state.rulesDone.includes(i);
+    return `
+      <li class="check-item ${done ? 'checked' : ''}" data-i="${i}">
+        <input type="checkbox" ${done ? 'checked' : ''}>
+        <span class="check-item-text">${RikaNavi.escapeHTML(r)}</span>
+      </li>
+    `;
+  }).join("");
+
+  ul.querySelectorAll(".check-item").forEach(li => {
+    const toggle = () => {
+      const i = parseInt(li.dataset.i);
+      const cb = li.querySelector("input");
+      const isDone = cb.checked;
+      if (isDone) { if (!state.rulesDone.includes(i)) state.rulesDone.push(i); }
+      else state.rulesDone = state.rulesDone.filter(x => x !== i);
+      li.classList.toggle("checked", isDone);
+      RikaNavi.save(TOOL_ID, state);
+    };
+    li.addEventListener("click", e => { if (e.target.tagName !== "INPUT") { const cb = li.querySelector("input"); cb.checked = !cb.checked; toggle(); } });
+    li.querySelector("input").addEventListener("change", toggle);
+  });
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の役割を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+renderCards();
+renderRules();
+</script>
+</body>
+</html>

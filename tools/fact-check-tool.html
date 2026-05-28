@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>結果と考察の違いチェック ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.judge-box {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.judge-text { font-size: 15px; font-weight: 700; line-height: 1.6; margin-bottom: 12px; }
+.judge-btns { display: flex; gap: 8px; }
+.judge-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s;
+}
+.judge-btn:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-md); }
+.judge-btn.fact-btn { background: var(--c1); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+.judge-btn.consider-btn { background: var(--c2); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+.judge-btn.disabled { opacity: 0.5; cursor: not-allowed; }
+.judge-feedback {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  display: none;
+}
+.judge-feedback.show { display: block; }
+.judge-feedback.correct { background: #e6f7ed; color: var(--ok); border: 2px solid var(--c5); }
+.judge-feedback.wrong { background: #fde8e8; color: var(--ng); border: 2px solid var(--c4); }
+
+.score-bar {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.score-num { font-family: var(--font-display); font-weight: 900; font-size: 32px; }
+
+.own-check-area textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px;
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+.judge-result-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid var(--line);
+  margin-left: 8px;
+}
+.badge-fact { background: var(--c1); color: white; }
+.badge-consider { background: var(--c2); color: white; }
+</style>
+</head>
+<body data-step="5" data-tool-id="fact-check-tool" data-tool-title="結果と考察の違いチェック" data-step-name="分かったことを整理する">
+
+<main>
+  <div class="tool-intro">
+    「<strong>結果</strong>」と「<strong>考察</strong>」の違いを身につけよう。<br>
+    クイズで練習してから、自分が書いた文を判定してみよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎓</span> 基本の確認</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:#e8f4ff;border:2.5px solid var(--c1);border-radius:10px;padding:12px;">
+        <div style="font-weight:900;color:var(--c1);margin-bottom:6px;font-size:15px;">📊 結果（事実）</div>
+        <div style="font-size:13px;line-height:1.6;">
+          見えたこと・測ったことをそのまま書く<br>
+          「〜だった」「〜になった」<br>
+          <strong>例：</strong>水の温度は100℃になった。
+        </div>
+      </div>
+      <div style="background:#f3e8ff;border:2.5px solid var(--c2);border-radius:10px;padding:12px;">
+        <div style="font-weight:900;color:var(--c2);margin-bottom:6px;font-size:15px;">🧠 考察（考え）</div>
+        <div style="font-size:13px;line-height:1.6;">
+          結果をもとに「なぜ？」を考えたこと<br>
+          「〜だから〜と考えた」「〜のため〜」<br>
+          <strong>例：</strong>火が強かったから早く沸騰した。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎮</span> クイズで練習</div>
+    <div class="score-bar">
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:2px;">正解数</div>
+      <div class="score-num" id="scoreNum">0</div>
+      <div style="font-size:12px;color:var(--ink-soft);" id="scoreDenom">/ 0 問</div>
+    </div>
+    <div id="quizArea"></div>
+    <div class="btn-row">
+      <button class="btn btn-small" id="resetQuizBtn">🔄 もう一度チャレンジ</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">✏️</span> 自分が書いた文を判定する</div>
+    <div class="section-subtitle">自分でどちらか判断してから、チェックしよう</div>
+    <div class="own-check-area">
+      <div class="field">
+        <label class="field-label">判定したい文</label>
+        <textarea id="ownText" placeholder="例：ろうそくの火は3分後に消えた。"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">自分の判断</label>
+        <div style="display:flex;gap:8px;">
+          <button class="judge-btn fact-btn" id="ownFactBtn">📊 結果（事実）</button>
+          <button class="judge-btn consider-btn" id="ownConsiderBtn">🧠 考察（考え）</button>
+        </div>
+      </div>
+      <div id="ownFeedback" style="margin-top:10px;"></div>
+    </div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const QUIZ_ITEMS = [
+  { text: "水の温度は5分で80℃になった。", answer: "fact", explain: "温度計で「測ったこと」をそのまま書いているから、結果（事実）だよ。" },
+  { text: "ろうそくの火は、ふたをしてから2分後に消えた。", answer: "fact", explain: "「消えた」という見えた事実を書いているから結果。" },
+  { text: "火が消えたのは、酸素がなくなったからだ。", answer: "consider", explain: "「〜からだ」と原因を考えているから、考察。" },
+  { text: "ふりこの周期は長さが長いほど大きかった。", answer: "fact", explain: "比べて見えた事実。" },
+  { text: "金属が早く熱くなったのは、金属が熱を伝えやすいからだと考えた。", answer: "consider", explain: "「〜からだと考えた」→考察。" },
+  { text: "植物Aの高さは10日で15cmになった。", answer: "fact", explain: "測った数値をそのまま書いた。" },
+  { text: "肥料があると植物が大きく育つため、栄養が重要だ。", answer: "consider", explain: "「〜ため」で理由を述べているから考察。" },
+  { text: "電球Aの方がBより明るく光っていた。", answer: "fact", explain: "見えたままを比べている。" },
+  { text: "豆電球が光ったのは、回路がつながったからだ。", answer: "consider", explain: "原因（回路）を考えているから考察。" },
+  { text: "試験管の中の液体の色は青から赤に変わった。", answer: "fact", explain: "色の変化をそのまま書いた。" },
+  { text: "塩が溶けにくくなったのは、水の温度が低いためと考えた。", answer: "consider", explain: "「〜ためと考えた」→考察。" },
+  { text: "バネを2倍伸ばすと、のびる長さも2倍になった。", answer: "fact", explain: "測ったことから分かる事実。" }
+];
+
+let quizState = { answers: {}, correct: 0, total: 0 };
+let currentItems = [];
+
+function shuffleAndRender() {
+  currentItems = [...QUIZ_ITEMS].sort(() => Math.random() - 0.5).slice(0, 8);
+  quizState = { answers: {}, correct: 0, total: 0 };
+  updateScore();
+
+  const area = document.getElementById("quizArea");
+  area.innerHTML = currentItems.map((q, qi) => `
+    <div class="judge-box">
+      <div class="judge-text">「${RikaNavi.escapeHTML(q.text)}」</div>
+      <div class="judge-btns">
+        <button class="judge-btn fact-btn" data-qi="${qi}" data-choice="fact">📊 結果（事実）</button>
+        <button class="judge-btn consider-btn" data-qi="${qi}" data-choice="consider">🧠 考察（考え）</button>
+      </div>
+      <div class="judge-feedback" id="qfb-${qi}"></div>
+    </div>
+  `).join("");
+
+  area.querySelectorAll(".judge-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const qi = parseInt(btn.dataset.qi);
+      if (quizState.answers[qi] !== undefined) return;
+      const choice = btn.dataset.choice;
+      const q = currentItems[qi];
+      const correct = choice === q.answer;
+      quizState.answers[qi] = correct;
+      quizState.total++;
+      if (correct) quizState.correct++;
+      updateScore();
+
+      const fb = document.getElementById(`qfb-${qi}`);
+      fb.className = "judge-feedback show " + (correct ? "correct" : "wrong");
+      fb.textContent = (correct ? "⭕ せいかい！ " : "💡 ちがうよ！ ") + q.explain;
+
+      // ボタンを暗くする
+      area.querySelectorAll(`.judge-btn[data-qi="${qi}"]`).forEach(b => b.classList.add("disabled"));
+    });
+  });
+}
+
+function updateScore() {
+  document.getElementById("scoreNum").textContent = quizState.correct;
+  document.getElementById("scoreDenom").textContent = `/ ${currentItems.length} 問（${quizState.total}問チャレンジ済み）`;
+}
+
+document.getElementById("resetQuizBtn").addEventListener("click", shuffleAndRender);
+
+// 自己判定
+["ownFactBtn","ownConsiderBtn"].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    const text = document.getElementById("ownText").value.trim();
+    if (!text) { RikaNavi.toast("文を入力してね"); return; }
+    const choice = id === "ownFactBtn" ? "fact" : "consider";
+    const label = choice === "fact" ? "📊 結果（事実）" : "🧠 考察（考え）";
+    const color = choice === "fact" ? "var(--c1)" : "var(--c2)";
+    const points = choice === "fact"
+      ? ["「〜だった」「〜になった」という言い方か？", "理由や原因（〜から・〜ため）が入っていないか？", "だれが見ても同じように読めるか？"]
+      : ["「〜と考えた」「〜だから〜」という言い方か？", "結果（事実）をもとにした考えか？", "予想と比べているか？"];
+    const fb = document.getElementById("ownFeedback");
+    fb.innerHTML = `
+      <div style="background:white;border:2.5px solid ${color};border-radius:10px;padding:12px;">
+        <div style="font-weight:900;margin-bottom:8px;">あなたの判断：<span style="color:${color};">${label}</span></div>
+        <div style="font-size:13px;margin-bottom:8px;color:var(--ink-soft);">この判断を確認するポイント：</div>
+        ${points.map(p => `<div style="font-size:13px;padding:4px 0;border-bottom:1px dashed var(--muted);">□ ${p}</div>`).join("")}
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">正解・不正解は先生と相談してみよう。判断が難しいものもあるよ。</div>
+      </div>
+    `;
+  });
+});
+
+shuffleAndRender();
+</script>
+</body>
+</html>

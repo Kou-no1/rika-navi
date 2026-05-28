@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>考察ビルダー ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.builder-step {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+.builder-step::before {
+  content: attr(data-step-num);
+  position: absolute;
+  top: -14px;
+  left: 16px;
+  width: 30px;
+  height: 30px;
+  background: var(--c6);
+  color: white;
+  border: 2.5px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 14px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,.2);
+  line-height: 1;
+}
+.builder-step-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: var(--c6);
+  padding-top: 4px;
+}
+.import-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f0ff;
+  border: 2px solid var(--c6);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.import-chip:hover { background: #d0e0ff; }
+
+.conclusion-box {
+  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+  border: 3px solid var(--c6);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+.conclusion-box-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--c6);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conclusion-text {
+  font-size: 15px;
+  line-height: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 60px;
+}
+.conclusion-text .highlight {
+  background: #fff3a0;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+.completeness-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.completeness-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+</style>
+</head>
+<body data-step="6" data-tool-id="consideration-builder" data-tool-title="考察ビルダー" data-step-name="結果から考える">
+
+<main>
+  <div class="tool-intro">
+    実験の結果をもとに<strong>考察</strong>を組み立てよう。<br>
+    ステップ順に入力していくと、発表できる考察文が完成するよ。
+  </div>
+
+  <!-- Step1: 結果の確認 -->
+  <div class="builder-step" data-step-num="1">
+    <div class="builder-step-title">📊 実験の結果は？</div>
+    <div class="import-chip" id="importResultBtn">📥 結果整理ボードから取り込む</div>
+    <div class="field-help">「何が・どうなったか」を事実として書こう</div>
+    <textarea id="resultText" placeholder="例：ふたをしたびんのろうそくは2分後に消えた。ふたをしないびんは5分後もまだ燃えていた。" style="min-height:70px;"></textarea>
+  </div>
+
+  <!-- Step2: 予想との比較 -->
+  <div class="builder-step" data-step-num="2">
+    <div class="builder-step-title">💭 予想と比べるとどうだった？</div>
+    <div class="import-chip" id="importPredictionBtn">📥 予想・仮説メーカーから取り込む</div>
+    <div class="field">
+      <select id="predictionMatch" style="border:2.5px solid var(--line);border-radius:10px;padding:10px;font-family:var(--font-body);font-weight:700;font-size:14px;width:100%;">
+        <option value="">--- 選んでね ---</option>
+        <option value="same">予想通りだった</option>
+        <option value="partial">だいたい予想通りだったが、一部ちがった</option>
+        <option value="diff">予想とはちがった</option>
+      </select>
+    </div>
+    <div class="field" id="predictionDiffArea" style="display:none;">
+      <label class="field-label">どこがちがった？</label>
+      <textarea id="predictionDiff" placeholder="例：空気があれば燃え続けると予想したが、実際には酸素の量が大事だった。" style="min-height:56px;"></textarea>
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);" id="importedPrediction"></div>
+  </div>
+
+  <!-- Step3: 考えたこと -->
+  <div class="builder-step" data-step-num="3">
+    <div class="builder-step-title">🧠 結果から何が言える？</div>
+    <div class="field-help">「結果は〇〇だった。このことから〜と考えた」の形で書こう</div>
+    <textarea id="thinkingText" placeholder="例：ふたをすると火が消えたことから、ものが燃えるには空気（酸素）が必要だと考えた。" style="min-height:80px;"></textarea>
+  </div>
+
+  <!-- Step4: 理由 -->
+  <div class="builder-step" data-step-num="4">
+    <div class="builder-step-title">🔗 なぜそう考えた？（理由）</div>
+    <div class="field-help">既習事項や実験の根拠を使って理由を書こう</div>
+    <textarea id="reasonText" placeholder="例：空気中の酸素が燃焼に使われ、ふたをするとそれ以上空気が入らなくなるため、火が消えると考えた。" style="min-height:70px;"></textarea>
+  </div>
+
+  <!-- Step5: まとめ -->
+  <div class="builder-step" data-step-num="5">
+    <div class="builder-step-title">📌 まとめ（1文で）</div>
+    <div class="field-help">「〇〇するためには、△△が必要だ」という形でまとめよう</div>
+    <textarea id="summaryText" placeholder="例：ものが燃え続けるためには、酸素（空気）が必要である。" style="min-height:56px;"></textarea>
+  </div>
+
+  <!-- 完成した考察 -->
+  <div class="conclusion-box">
+    <div class="conclusion-box-title">
+      <span style="font-size:24px;">📝</span> できあがった考察
+    </div>
+    <div class="conclusion-text" id="conclusionText">
+      <span style="color:var(--ink-soft);font-style:italic;">上のステップを入力すると、ここに考察文が作られるよ</span>
+    </div>
+
+    <div class="completeness-bar" id="completenessBar"></div>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box" style="margin-top:14px;">
+    💡 <strong>よい考察のポイント</strong>：①結果（事実）をもとにしている ②「〜から・〜ため」で理由がある ③予想と比べている ④1文でまとめられる
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "consideration-builder";
+const DEFAULT = {
+  resultText: "", predictionMatch: "", predictionDiff: "",
+  thinkingText: "", reasonText: "", summaryText: "",
+  importedPredictionText: ""
+};
+
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+
+function bindAll() {
+  ["resultText","predictionDiff","thinkingText","reasonText","summaryText"].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = state[id] || "";
+    el.addEventListener("input", () => { state[id] = el.value; updateConclusion(); });
+  });
+  const pm = document.getElementById("predictionMatch");
+  pm.value = state.predictionMatch || "";
+  pm.addEventListener("change", () => {
+    state.predictionMatch = pm.value;
+    document.getElementById("predictionDiffArea").style.display =
+      (pm.value === "diff" || pm.value === "partial") ? "block" : "none";
+    updateConclusion();
+  });
+  if (state.predictionMatch === "diff" || state.predictionMatch === "partial") {
+    document.getElementById("predictionDiffArea").style.display = "block";
+  }
+  if (state.importedPredictionText) {
+    document.getElementById("importedPrediction").textContent = `📥 取り込んだ予想：${state.importedPredictionText}`;
+  }
+}
+
+function updateConclusion() {
+  const el = document.getElementById("conclusionText");
+  const { resultText, predictionMatch, predictionDiff, thinkingText, reasonText, summaryText } = state;
+
+  const parts = [];
+  if (resultText.trim()) parts.push(`結果は、${resultText.trim()}でした。`);
+
+  const matchLabels = { same: "予想通りでした。", partial: "だいたい予想通りでしたが、一部ちがいました。", diff: "予想とはちがいました。" };
+  if (predictionMatch) {
+    let matchLine = `予想と比べると、${matchLabels[predictionMatch]}`;
+    if (predictionDiff.trim()) matchLine += ` ${predictionDiff.trim()}`;
+    parts.push(matchLine);
+  }
+  if (thinkingText.trim()) parts.push(`このことから、${thinkingText.trim()}と考えました。`);
+  if (reasonText.trim()) parts.push(`理由は、${reasonText.trim()}からです。`);
+  if (summaryText.trim()) parts.push(`だから、${summaryText.trim()}とまとめます。`);
+
+  if (!parts.length) {
+    el.innerHTML = '<span style="color:var(--ink-soft);font-style:italic;">上のステップを入力すると、ここに考察文が作られるよ</span>';
+  } else {
+    el.innerHTML = parts.map((p, i) => `<span class="highlight">${RikaNavi.escapeHTML(p)}</span>`).join("\n");
+  }
+
+  const items = [
+    { label: "結果", ok: !!resultText.trim() },
+    { label: "予想比較", ok: !!predictionMatch },
+    { label: "考え", ok: !!thinkingText.trim() },
+    { label: "理由", ok: !!reasonText.trim() },
+    { label: "まとめ", ok: !!summaryText.trim() }
+  ];
+  document.getElementById("completenessBar").innerHTML = items.map(item => `
+    <div class="completeness-item">
+      <span style="font-size:16px;">${item.ok ? '✅' : '⬜'}</span>
+      <span style="color:${item.ok ? 'var(--ok)' : 'var(--ink-soft)'};">${item.label}</span>
+    </div>
+  `).join("");
+}
+
+// 結果整理ボードから取り込み
+document.getElementById("importResultBtn").addEventListener("click", () => {
+  const rb = RikaNavi.load("result-board", { findings: [] });
+  const texts = (rb.findings || []).filter(f => f.text.trim()).map(f => f.text).join("。");
+  if (!texts) { RikaNavi.toast("結果整理ボードにデータがないよ"); return; }
+  document.getElementById("resultText").value = texts;
+  state.resultText = texts;
+  updateConclusion();
+  RikaNavi.toast("📥 結果を取り込んだよ！");
+});
+
+// 予想メーカーから取り込み
+document.getElementById("importPredictionBtn").addEventListener("click", () => {
+  const pm = RikaNavi.load("prediction-maker", { prediction: "", reason1: "" });
+  if (!pm.prediction && !pm.reason1) { RikaNavi.toast("予想・仮説メーカーにデータがないよ"); return; }
+  const text = [pm.prediction, pm.reason1].filter(Boolean).join("、なぜなら");
+  state.importedPredictionText = text;
+  document.getElementById("importedPrediction").textContent = `📥 取り込んだ予想：${text}`;
+  updateConclusion();
+  RikaNavi.toast("📥 予想を取り込んだよ！");
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  // 発表文テンプレートへの連携キーとして保存
+  RikaNavi.save("consideration-for-present", { text: document.getElementById("conclusionText").innerText });
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の考察を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  RikaNavi.copy(document.getElementById("conclusionText").innerText);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("考察をすべてクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  bindAll();
+  updateConclusion();
+});
+
+bindAll();
+updateConclusion();
+</script>
+</body>
+</html>
