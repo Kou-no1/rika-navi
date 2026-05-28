@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>予想・仮説メーカー ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+</head>
+<body data-step="2" data-tool-id="prediction-maker" data-tool-title="予想・仮説メーカー" data-step-name="どうなると思う？">
+
+<main>
+  <div class="tool-intro">
+    予想は「<strong>こうなりそう</strong>」だけじゃ足りない。<br>
+    「<strong>なぜなら</strong>〇〇だから」と<strong>理由</strong>をつけよう。これが仮説だよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">❓</span> 今日の問題は？</div>
+    <div class="field-help">問題づくりサポーターで作った問題を、ここに書こう</div>
+    <textarea id="question" placeholder="例：ものが燃え続けるには、何が必要なのだろうか？"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💭</span> どうなると思う？（予想）</div>
+    <div class="field-help">結果がどうなりそうか書こう</div>
+    <textarea id="prediction" placeholder="例：ものが燃え続けるには、空気が必要だと思う。"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🧠</span> なぜそう思う？（理由）</div>
+    <div class="section-subtitle">理由は最低でも1つ、できれば2つ書こう</div>
+
+    <div class="field">
+      <label class="field-label">理由① <span class="required">必須</span></label>
+      <div class="field-help">前に学習したことを使えないかな？ 「○○の学習で、△△と学んだから」</div>
+      <textarea id="reason1" placeholder="例：3年生の風やゴムの学習で、空気の動きが大事だと学んだから。"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">理由②（あればもっとよい）</label>
+      <div class="field-help">生活の中で似たことはなかったかな？</div>
+      <textarea id="reason2" placeholder="例：たき火に空気を送ると、よく燃えるのを見たことがあるから。"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎯</span> もし〇〇なら、〇〇になるはず</div>
+    <div class="field-help">「もし予想が正しいなら、実験ではこういう結果になるはず」を書こう。これがあると実験計画が立てやすいよ。</div>
+    <textarea id="ifthen" placeholder="例：もし空気が必要なら、ふたをしたびんの中の火はすぐ消えるはず。"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📝</span> できあがった仮説</div>
+    <div class="preview" id="preview">
+      <div class="preview-empty">上に書いていくと、ここに仮説があらわれます</div>
+    </div>
+
+    <div id="checkArea" style="margin-top: 12px;"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>よい仮説のチェック</strong>：①予想と理由がセット ②理由が学習や経験につながっている ③実験で確かめられる
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "prediction-maker";
+const DEFAULT = { question: "", prediction: "", reason1: "", reason2: "", ifthen: "" };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+
+function bind() {
+  Object.keys(DEFAULT).forEach(k => {
+    const el = document.getElementById(k);
+    el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; updatePreview(); });
+  });
+}
+
+function updatePreview() {
+  const p = document.getElementById("preview");
+  const { prediction, reason1, reason2, ifthen, question } = state;
+
+  if (!prediction.trim() && !reason1.trim()) {
+    p.innerHTML = '<div class="preview-empty">上に書いていくと、ここに仮説があらわれます</div>';
+    document.getElementById("checkArea").innerHTML = "";
+    return;
+  }
+
+  let html = "";
+  if (question.trim()) {
+    html += `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">問題：${RikaNavi.escapeHTML(question)}</div>`;
+  }
+  if (prediction.trim()) {
+    html += `<div style="margin-bottom:8px;"><strong>わたしは、</strong>${RikaNavi.escapeHTML(prediction)}<strong>と考えます。</strong></div>`;
+  }
+  if (reason1.trim()) {
+    html += `<div style="margin-bottom:4px;"><strong>なぜなら、</strong>${RikaNavi.escapeHTML(reason1)}</div>`;
+  }
+  if (reason2.trim()) {
+    html += `<div style="margin-bottom:4px;"><strong>また、</strong>${RikaNavi.escapeHTML(reason2)}</div>`;
+  }
+  if (ifthen.trim()) {
+    html += `<div style="margin-top:8px;padding:8px;background:#fff8e0;border-radius:6px;"><strong>🎯 もしそうなら、</strong>${RikaNavi.escapeHTML(ifthen)}</div>`;
+  }
+  p.innerHTML = html;
+
+  // チェック表示
+  const checks = [];
+  checks.push({ label: "予想を書いた", ok: !!prediction.trim() });
+  checks.push({ label: "理由を書いた", ok: !!reason1.trim() });
+  checks.push({ label: "理由が2つある", ok: !!reason2.trim() });
+  checks.push({ label: "「もし〜なら」が書いてある", ok: !!ifthen.trim() });
+
+  const ca = document.getElementById("checkArea");
+  ca.innerHTML = `
+    <div style="background:var(--muted-bg);padding:10px;border-radius:8px;font-size:13px;">
+      <div style="font-weight:900;margin-bottom:6px;">✅ 仮説のチェック</div>
+      ${checks.map(c => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+          <span style="font-size:16px;">${c.ok ? '✓' : '○'}</span>
+          <span style="color:${c.ok ? 'var(--ok)' : 'var(--ink-soft)'};font-weight:${c.ok ? '700' : '500'};">${c.label}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  RikaNavi.copy(document.getElementById("preview").innerText);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("入力をすべてクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  bind();
+  updatePreview();
+});
+
+bind();
+updatePreview();
+</script>
+</body>
+</html>

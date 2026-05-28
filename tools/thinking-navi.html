@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>思考ツールナビゲーター ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.thinking-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.tt-card {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s;
+}
+.tt-card:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-md); }
+.tt-card.active { background: var(--c1); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+.tt-icon { font-size: 32px; text-align: center; display: block; margin-bottom: 4px; }
+.tt-name { font-weight: 900; font-size: 14px; text-align: center; margin-bottom: 4px; }
+.tt-desc { font-size: 11px; text-align: center; opacity: 0.85; line-height: 1.4; }
+.tt-detail {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 16px;
+  box-shadow: var(--shadow-md);
+}
+.tt-when { background: var(--muted-bg); padding: 10px 12px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
+.tt-example { background: #fff8e0; border-left: 4px solid var(--accent); padding: 10px 12px; border-radius: 6px; margin: 10px 0; font-size: 13px; }
+</style>
+</head>
+<body data-step="1" data-tool-id="thinking-navi" data-tool-title="思考ツールナビゲーター" data-step-name="何を調べる？">
+
+<main>
+  <div class="tool-intro">
+    自分の考えを整理するのに、ぴったりの<strong>思考ツール</strong>を選ぼう。<br>
+    どんな場面で使うか、例も見られるよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🧩</span> 思考ツールを えらぼう</div>
+    <div class="thinking-tools" id="ttGrid"></div>
+  </div>
+
+  <div id="detailWrap"></div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOLS = [
+  {
+    id: "venn", icon: "⭕", name: "ベン図",
+    desc: "2つを比べる",
+    when: "「AとBで何がちがう？何が同じ？」を考えるとき",
+    example: "鉄と銅の性質を比べる。日なたと日かげの土を比べる。",
+    howto: "2つの丸をかさねて、重なる部分に「同じところ」、外側に「ちがうところ」を書く。"
+  },
+  {
+    id: "matrix", icon: "📋", name: "マトリックス（表）",
+    desc: "たくさん比べる",
+    when: "3つ以上を、いくつかの観点で比べたいとき",
+    example: "金属・木・プラスチックを、電気・熱・磁石で比べる。",
+    howto: "たての列に比べるもの、横の列に観点を書く。表のマスに結果を書く。"
+  },
+  {
+    id: "fishbone", icon: "🐟", name: "フィッシュボーン",
+    desc: "原因を探る",
+    when: "「なぜそうなった？」を、いくつかの原因に分けて考えるとき",
+    example: "なぜ植物が枯れた？→水・光・温度・土の原因に分けて考える。",
+    howto: "魚の骨のように、中心に結果、枝に原因を書いていく。"
+  },
+  {
+    id: "tree", icon: "🌳", name: "ツリー図",
+    desc: "分類する",
+    when: "ものを仲間分けして整理したいとき",
+    example: "生き物を、植物と動物に分け、さらに細かく分ける。",
+    howto: "上から下へ、ものを分けながら枝分かれさせていく。"
+  },
+  {
+    id: "ycurve", icon: "📈", name: "折れ線グラフ",
+    desc: "変化を見る",
+    when: "時間とともに何かが変わる様子を見たいとき",
+    example: "水の温度の変化。植物の高さの変化。",
+    howto: "よこ軸に時間、たて軸に変化するものをとり、点をつないで線にする。"
+  },
+  {
+    id: "bar", icon: "📊", name: "ぼうグラフ",
+    desc: "量を比べる",
+    when: "いくつかの量を比べて見たいとき",
+    example: "メダカの数。班ごとの種子の数。",
+    howto: "よこ軸に比べるもの、たて軸に量をとってぼうを書く。"
+  },
+  {
+    id: "kj", icon: "🗂️", name: "KJ法（カード分け）",
+    desc: "アイデアを整理",
+    when: "たくさんのアイデアや気づきをグループに分けるとき",
+    example: "観察で気づいたことをカードに書き、似たもの同士を集める。",
+    howto: "1枚のカードに1つの気づきを書き、似た仲間ごとにまとめてグループ名をつける。"
+  },
+  {
+    id: "concept", icon: "🕸️", name: "コンセプトマップ",
+    desc: "つながりを見る",
+    when: "いろいろなことばが、どうつながっているか整理するとき",
+    example: "水のすがた・温度・気温の関係。植物のつくりと働き。",
+    howto: "ことばを丸で囲み、関係のあるもの同士を線でつなぎ、線の上に関係を書く。"
+  },
+  {
+    id: "pyramid", icon: "🔺", name: "ピラミッド図",
+    desc: "順位をつける",
+    when: "大事なものから順にならべたいとき",
+    example: "実験で気をつけることを、大事な順にならべる。",
+    howto: "上に最も大事なもの、下に行くほど大事さがゆるいものを書く。"
+  }
+];
+
+const TOOL_ID = "thinking-navi";
+let state = RikaNavi.load(TOOL_ID, { selected: "" });
+
+function render() {
+  const grid = document.getElementById("ttGrid");
+  grid.innerHTML = TOOLS.map(t => `
+    <div class="tt-card ${state.selected === t.id ? 'active' : ''}" data-id="${t.id}">
+      <span class="tt-icon">${t.icon}</span>
+      <div class="tt-name">${t.name}</div>
+      <div class="tt-desc">${t.desc}</div>
+    </div>
+  `).join("");
+  grid.querySelectorAll(".tt-card").forEach(c => {
+    c.addEventListener("click", () => {
+      state.selected = (state.selected === c.dataset.id) ? "" : c.dataset.id;
+      RikaNavi.save(TOOL_ID, state);
+      render();
+    });
+  });
+
+  const dw = document.getElementById("detailWrap");
+  const t = TOOLS.find(x => x.id === state.selected);
+  if (!t) { dw.innerHTML = ""; return; }
+  dw.innerHTML = `
+    <div class="tt-detail" style="border-color: var(--c1);">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="font-size:42px;">${t.icon}</div>
+        <div>
+          <div style="font-family:var(--font-display);font-weight:900;font-size:20px;">${t.name}</div>
+          <div style="font-size:13px;color:var(--ink-soft);">${t.desc}</div>
+        </div>
+      </div>
+      <div class="tt-when"><strong>🎯 どんなとき使う？</strong><br>${RikaNavi.escapeHTML(t.when)}</div>
+      <div class="tt-example"><strong>📖 例</strong><br>${RikaNavi.escapeHTML(t.example)}</div>
+      <div style="font-size:13px;background:#e8f4ff;padding:10px 12px;border-radius:8px;border-left:4px solid var(--c1);">
+        <strong>✍️ 使い方</strong><br>${RikaNavi.escapeHTML(t.howto)}
+      </div>
+    </div>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>

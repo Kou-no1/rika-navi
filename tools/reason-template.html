@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理由づけテンプレート ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.template-card {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.template-header {
+  font-weight: 900;
+  font-family: var(--font-display);
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--c2);
+}
+.template-pattern {
+  background: var(--muted-bg);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+  line-height: 1.6;
+}
+.template-pattern .blank {
+  background: white;
+  border: 1px dashed var(--ink-soft);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 0 2px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.template-example {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  background: #fff8e0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+</style>
+</head>
+<body data-step="2" data-tool-id="reason-template" data-tool-title="理由づけテンプレート" data-step-name="どうなると思う？">
+
+<main>
+  <div class="tool-intro">
+    予想に理由をつけるとき、使える<strong>言葉の型</strong>をあつめたよ。<br>
+    自分にぴったりの型を選んで、書き始めよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🔑</span> 自分の理由を書こう</div>
+    <div class="field">
+      <label class="field-label">予想（どうなると思う？）</label>
+      <textarea id="prediction" placeholder="例：金属は温めるとふくらむと思う"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">理由を書いてみよう</label>
+      <textarea id="reason" placeholder="下のテンプレートを参考に書こう"></textarea>
+    </div>
+
+    <div class="preview-title">📝 まとまった文</div>
+    <div class="preview" id="preview">
+      <div class="preview-empty">上に書くと、まとまった文ができるよ</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📚</span> 使える理由づけパターン</div>
+    <div class="section-subtitle">場面に合うものを選んで使おう</div>
+    <div id="templates"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TEMPLATES = [
+  {
+    title: "① 前の学習を使う",
+    pattern: '<span class="blank">○年生</span>のときに <span class="blank">習ったこと</span> を学習したから、今回も <span class="blank">同じ考え</span> になると思う。',
+    example: "3年生のときに、ものが燃えるには空気が必要だと学習したから、今回もふたをすると消えると思う。"
+  },
+  {
+    title: "② 生活経験を使う",
+    pattern: '生活の中で <span class="blank">見たこと/体験したこと</span> があるから、 <span class="blank">同じことが起きる</span> と思う。',
+    example: "たき火に風を送るとよく燃えるのを見たから、空気があると火は強くなると思う。"
+  },
+  {
+    title: "③ 他の場面と比べる",
+    pattern: '<span class="blank">似ている場面</span> では <span class="blank">こうなる</span> から、今回も同じことが起きると思う。',
+    example: "水蒸気は冷えると水になるから、空気の中の水蒸気も同じように冷えると水になると思う。"
+  },
+  {
+    title: "④ 性質・特ちょうから考える",
+    pattern: '<span class="blank">対象</span> には <span class="blank">こんな性質</span> があるから、 <span class="blank">こうなる</span> はずだ。',
+    example: "金属には熱を伝える性質があるから、はしを温めるとはんたい側まで熱くなるはずだ。"
+  },
+  {
+    title: "⑤ 仲間から考える",
+    pattern: '<span class="blank">対象</span> は <span class="blank">○○のなかま</span> だから、 <span class="blank">同じ性質</span> をもつと思う。',
+    example: "アルミは金属のなかまだから、鉄と同じように電気を通すと思う。"
+  },
+  {
+    title: "⑥ 観察した事実から",
+    pattern: '<span class="blank">こんな観察</span> をしたから、 <span class="blank">こうなる</span> と考えた。',
+    example: "ヒマワリは日なたで大きく育っていたから、光が成長に関係していると考えた。"
+  },
+  {
+    title: "⑦ もし〜ならパターン",
+    pattern: 'もし <span class="blank">予想</span> が正しいなら、 <span class="blank">こんな結果</span> になるはずだ。',
+    example: "もし空気が必要なら、ふたをした方が早く火が消えるはずだ。"
+  }
+];
+
+const TOOL_ID = "reason-template";
+const DEFAULT = { prediction: "", reason: "" };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+
+function bindInputs() {
+  ["prediction", "reason"].forEach(k => {
+    const el = document.getElementById(k);
+    el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; updatePreview(); });
+  });
+}
+
+function updatePreview() {
+  const p = document.getElementById("preview");
+  const { prediction, reason } = state;
+  if (!prediction.trim() && !reason.trim()) {
+    p.innerHTML = '<div class="preview-empty">上に書くと、まとまった文ができるよ</div>';
+    return;
+  }
+  let html = "";
+  if (prediction.trim()) html += `<div><strong>予想：</strong>わたしは、${RikaNavi.escapeHTML(prediction)}と考えます。</div>`;
+  if (reason.trim()) html += `<div style="margin-top:6px;"><strong>理由：</strong>なぜなら、${RikaNavi.escapeHTML(reason)}からです。</div>`;
+  p.innerHTML = html;
+}
+
+function renderTemplates() {
+  document.getElementById("templates").innerHTML = TEMPLATES.map(t => `
+    <div class="template-card">
+      <div class="template-header">${t.title}</div>
+      <div class="template-pattern">${t.pattern}</div>
+      <div class="template-example">💡 例：${RikaNavi.escapeHTML(t.example)}</div>
+      <button class="btn btn-small" data-pattern="${RikaNavi.escapeHTML(t.example)}" onclick="useExample(this)">この例を使ってみる</button>
+    </div>
+  `).join("");
+}
+
+window.useExample = function(btn) {
+  const el = document.getElementById("reason");
+  el.value = btn.dataset.pattern;
+  state.reason = btn.dataset.pattern;
+  updatePreview();
+  el.focus();
+  RikaNavi.toast("例を入れました（書きかえてね）");
+};
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  RikaNavi.copy(document.getElementById("preview").innerText);
+});
+
+bindInputs();
+renderTemplates();
+updatePreview();
+</script>
+</body>
+</html>

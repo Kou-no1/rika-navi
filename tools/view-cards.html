@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理科の見方カード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.view-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.view-card {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s;
+  position: relative;
+}
+.view-card:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-md); }
+.view-card .vc-icon { font-size: 36px; display: block; margin: 4px 0; }
+.view-card .vc-name { font-weight: 900; font-family: var(--font-display); font-size: 15px; }
+.view-card .vc-q { font-size: 11px; color: var(--ink-soft); margin-top: 4px; min-height: 2.5em; line-height: 1.3; }
+.view-card.flipped { background: var(--c1); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+.view-card.flipped .vc-q { color: white; opacity: 0.95; }
+
+.areas { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.area-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: var(--muted-bg); border: 1px solid var(--muted); }
+.view-card.flipped .area-tag { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); color: white; }
+</style>
+</head>
+<body data-step="1" data-tool-id="view-cards" data-tool-title="理科の見方カード" data-step-name="何を調べる？">
+
+<main>
+  <div class="tool-intro">
+    理科では、いろいろな<strong>見方</strong>でものごとを考えるよ。<br>
+    今の学習にぴったりの見方を選んでみよう。カードを押すと「使うときのことば」が出るよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">👀</span> 理科の見方（カードを押してみよう）</div>
+    <div class="view-grid" id="viewGrid"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 同じものでも、見方を変えると新しい発見があるよ。たとえば「水」は、量で見ても、温度で見ても、変化で見てもよい。
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const VIEWS = [
+  { id: "qty",      icon: "🔢", name: "量で見る",     q: "どれくらい？いくつ？",       areas: ["物質","運動"] },
+  { id: "compare",  icon: "⚖️", name: "くらべる",     q: "Aと比べてどうちがう？",      areas: ["物質","生物","地球"] },
+  { id: "change",   icon: "🔄", name: "変化で見る",   q: "どう変わった？前と後で？",  areas: ["物質","生物","運動"] },
+  { id: "time",     icon: "⏱️", name: "時間で見る",   q: "いつ？どのくらいの時間で？", areas: ["生物","地球","運動"] },
+  { id: "space",    icon: "📍", name: "空間で見る",   q: "どこ？どれくらいの場所？",  areas: ["地球","運動"] },
+  { id: "cause",    icon: "🔗", name: "関係づける",   q: "なぜ？何が原因？",         areas: ["物質","生物","運動"] },
+  { id: "shape",    icon: "📐", name: "形・つくり",   q: "どんな形？どんなつくり？",  areas: ["物質","生物"] },
+  { id: "function", icon: "⚙️", name: "はたらき",     q: "何のため？どう働く？",     areas: ["生物"] },
+  { id: "energy",   icon: "⚡", name: "エネルギー",   q: "力？熱？光？電気？",       areas: ["物質","運動"] },
+  { id: "common",   icon: "🤝", name: "共通点",       q: "似ているところは？",      areas: ["物質","生物","地球"] },
+  { id: "diff",     icon: "🎯", name: "ちがい",       q: "ちがうところは？",        areas: ["物質","生物","地球"] },
+  { id: "balance",  icon: "⚖️", name: "つり合い",     q: "つり合っている？",        areas: ["運動","物質"] }
+];
+
+const TOOL_ID = "view-cards";
+let state = RikaNavi.load(TOOL_ID, { flipped: [] });
+
+function render() {
+  const grid = document.getElementById("viewGrid");
+  grid.innerHTML = VIEWS.map(v => `
+    <div class="view-card ${state.flipped.includes(v.id) ? 'flipped' : ''}" data-id="${v.id}">
+      <span class="vc-icon">${v.icon}</span>
+      <div class="vc-name">${v.name}</div>
+      <div class="vc-q">${state.flipped.includes(v.id) ? "「" + v.q + "」と問おう" : v.q}</div>
+      <div class="areas">${v.areas.map(a => `<span class="area-tag">${a}</span>`).join("")}</div>
+    </div>
+  `).join("");
+  grid.querySelectorAll(".view-card").forEach(c => {
+    c.addEventListener("click", () => {
+      const id = c.dataset.id;
+      const i = state.flipped.indexOf(id);
+      if (i >= 0) state.flipped.splice(i, 1);
+      else state.flipped.push(id);
+      RikaNavi.save(TOOL_ID, state);
+      render();
+    });
+  });
+}
+render();
+</script>
+</body>
+</html>

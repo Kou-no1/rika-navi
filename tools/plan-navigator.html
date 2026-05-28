@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実験計画ナビゲーター ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.same-list, .tool-list { display: flex; flex-direction: column; gap: 6px; }
+.list-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.list-item input { flex: 1; }
+.list-item .remove-btn {
+  width: 36px;
+  height: 36px;
+  border: 2.5px solid var(--line);
+  background: var(--bg);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 900;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+.add-btn {
+  border: 2.5px dashed var(--ink-soft);
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  width: 100%;
+}
+.add-btn:hover { background: var(--muted-bg); }
+.plan-summary {
+  background: white;
+  border: 3px solid var(--c3);
+  border-radius: 12px;
+  padding: 16px;
+  font-family: var(--font-display);
+}
+.plan-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px dashed var(--muted); }
+.plan-row:last-child { border-bottom: 0; }
+.plan-row .label { font-weight: 900; min-width: 110px; font-size: 13px; color: var(--c3); }
+.plan-row .value { flex: 1; font-size: 14px; }
+</style>
+</head>
+<body data-step="3" data-tool-id="plan-navigator" data-tool-title="実験計画ナビゲーター" data-step-name="どうやって調べる？">
+
+<main>
+  <div class="tool-intro">
+    実験を始める前に、計画を立てよう。<br>
+    <strong>変える条件は1つだけ</strong>、それ以外は<strong>すべて同じ</strong>にする。これが「条件制御」だよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">❓</span> 何を調べる？</div>
+    <div class="field-help">問題を書こう。例：ものが燃え続けるには空気が必要か？</div>
+    <textarea id="topic" placeholder="例：水の温度が上がる速さは、火の強さで変わるのか？"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🔄</span> 変える条件</div>
+    <div class="field-help">⚠️ 変える条件は<strong>1つだけ</strong>にしよう。複数あると、何が原因か分からなくなるよ。</div>
+    <div class="field">
+      <label class="field-label">変える条件は？</label>
+      <input type="text" id="changeWhat" placeholder="例：火の強さ">
+    </div>
+    <div class="field">
+      <label class="field-label">どんなふうに変える？（例：強・中・弱）</label>
+      <input type="text" id="changeHow" placeholder="例：強火・中火・弱火の3パターン">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">⚖️</span> 同じにする条件</div>
+    <div class="field-help">変える条件 <strong>以外</strong> は、すべて同じにそろえよう。これを「そろえる」と言うよ。</div>
+    <div class="same-list" id="sameList"></div>
+    <button class="add-btn" id="addSameBtn">+ 同じにする条件を追加</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📏</span> 何を調べる？（記録すること）</div>
+    <div class="field-help">どんな結果を、どうやって記録するか</div>
+    <div class="field">
+      <label class="field-label">調べる（測る・観察する）こと</label>
+      <input type="text" id="measureWhat" placeholder="例：水の温度（℃）">
+    </div>
+    <div class="field">
+      <label class="field-label">どうやって記録する？</label>
+      <input type="text" id="measureHow" placeholder="例：1分ごとに表に書く">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🧰</span> 使う道具</div>
+    <div class="tool-list" id="toolList"></div>
+    <button class="add-btn" id="addToolBtn">+ 道具を追加</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">⚠️</span> 安全に気をつけること</div>
+    <textarea id="safety" placeholder="例：火を使うので、まわりに燃えやすいものを置かない。保護メガネをつける。"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📋</span> 実験計画 完成版</div>
+    <div class="plan-summary" id="planSummary"></div>
+
+    <div id="checkArea" style="margin-top: 12px;"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "plan-navigator";
+const DEFAULT = {
+  topic: "", changeWhat: "", changeHow: "",
+  sameConditions: [""],
+  measureWhat: "", measureHow: "",
+  tools: [""],
+  safety: ""
+};
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+// 配列が無い場合保険
+if (!Array.isArray(state.sameConditions)) state.sameConditions = [""];
+if (!Array.isArray(state.tools)) state.tools = [""];
+
+function bindSimple(ids) {
+  ids.forEach(k => {
+    const el = document.getElementById(k);
+    el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; updateSummary(); });
+  });
+}
+
+function renderListBlock(blockId, items, addEmpty, placeholder) {
+  const wrap = document.getElementById(blockId);
+  wrap.innerHTML = items.map((v, i) => `
+    <div class="list-item">
+      <input type="text" data-i="${i}" value="${RikaNavi.escapeHTML(v)}" placeholder="${placeholder}">
+      <button class="remove-btn" data-i="${i}">✕</button>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", () => {
+      items[parseInt(inp.dataset.i)] = inp.value;
+      updateSummary();
+    });
+  });
+  wrap.querySelectorAll(".remove-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      items.splice(parseInt(b.dataset.i), 1);
+      if (items.length === 0) items.push("");
+      if (blockId === "sameList") renderListBlock(blockId, state.sameConditions, "", "例：水の量、ビーカーの種類");
+      else renderListBlock(blockId, state.tools, "", "例：ガスバーナー、ビーカー");
+      updateSummary();
+    });
+  });
+}
+
+function updateSummary() {
+  const sums = [
+    { label: "調べること",         value: state.topic },
+    { label: "変える条件",         value: state.changeWhat + (state.changeHow ? ` （${state.changeHow}）` : "") },
+    { label: "同じにする条件",     value: state.sameConditions.filter(s => s.trim()).join("、") || "" },
+    { label: "調べる(測る)こと",   value: state.measureWhat + (state.measureHow ? ` ／ ${state.measureHow}` : "") },
+    { label: "使う道具",           value: state.tools.filter(t => t.trim()).join("、") || "" },
+    { label: "安全のために",       value: state.safety }
+  ];
+
+  document.getElementById("planSummary").innerHTML = sums.map(s => `
+    <div class="plan-row">
+      <div class="label">${s.label}</div>
+      <div class="value">${s.value.trim() ? RikaNavi.escapeHTML(s.value) : '<span style="color:var(--ink-soft);font-style:italic;">未入力</span>'}</div>
+    </div>
+  `).join("");
+
+  const checks = [
+    { label: "調べることが書いてある", ok: !!state.topic.trim() },
+    { label: "変える条件は1つだけ", ok: !!state.changeWhat.trim() },
+    { label: "同じにする条件がある", ok: state.sameConditions.filter(s => s.trim()).length > 0 },
+    { label: "何を記録するか決まっている", ok: !!state.measureWhat.trim() },
+    { label: "安全への配慮がある", ok: !!state.safety.trim() }
+  ];
+
+  document.getElementById("checkArea").innerHTML = `
+    <div style="background:var(--muted-bg);padding:10px;border-radius:8px;font-size:13px;">
+      <div style="font-weight:900;margin-bottom:6px;">✅ 計画チェック</div>
+      ${checks.map(c => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+          <span style="font-size:16px;">${c.ok ? '✓' : '○'}</span>
+          <span style="color:${c.ok ? 'var(--ok)' : 'var(--ink-soft)'};font-weight:${c.ok ? '700' : '500'};">${c.label}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+bindSimple(["topic","changeWhat","changeHow","measureWhat","measureHow","safety"]);
+renderListBlock("sameList", state.sameConditions, "", "例：水の量、ビーカーの種類");
+renderListBlock("toolList", state.tools, "", "例：ガスバーナー、ビーカー");
+
+document.getElementById("addSameBtn").addEventListener("click", () => {
+  state.sameConditions.push("");
+  renderListBlock("sameList", state.sameConditions, "", "例：水の量、ビーカーの種類");
+});
+document.getElementById("addToolBtn").addEventListener("click", () => {
+  state.tools.push("");
+  renderListBlock("toolList", state.tools, "", "例：ガスバーナー、ビーカー");
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  RikaNavi.copy(document.getElementById("planSummary").innerText);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("入力をすべてクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  location.reload();
+});
+
+updateSummary();
+</script>
+</body>
+</html>

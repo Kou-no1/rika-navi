@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>既習事項ふり返りカード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.grade-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.grade-tab {
+  padding: 8px 14px;
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.grade-tab.active { background: var(--c2); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+.unit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.unit-card {
+  background: var(--bg-paper);
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.unit-card:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-md); }
+.unit-name { font-weight: 900; font-size: 14px; margin-bottom: 4px; color: var(--c2); }
+.unit-points { font-size: 12px; color: var(--ink); line-height: 1.5; }
+.unit-points li { margin-left: 16px; margin-bottom: 2px; }
+.selected-units { background: var(--muted-bg); padding: 12px; border-radius: 10px; margin-top: 10px; min-height: 50px; }
+.selected-unit-tag {
+  display: inline-block;
+  background: var(--c2);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.area-tag-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.area-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: var(--muted-bg); border: 1px solid var(--muted); color: var(--ink-soft); }
+</style>
+</head>
+<body data-step="2" data-tool-id="prior-knowledge" data-tool-title="既習事項ふり返りカード" data-step-name="どうなると思う？">
+
+<main>
+  <div class="tool-intro">
+    予想に理由をつけるとき、<strong>前に習ったこと</strong>を使おう。<br>
+    今までの学年で学んだ単元を一覧で見られるよ。学習を選んでメモを残せる。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📚</span> 学年をえらぼう</div>
+    <div class="grade-tabs" id="gradeTabs"></div>
+    <div class="unit-grid" id="unitGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎯</span> 今回の予想に使う学習</div>
+    <div class="field-help">単元カードをクリックすると、ここに追加されるよ</div>
+    <div class="selected-units" id="selectedUnits"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">✏️</span> どうつながる？</div>
+    <div class="field-help">選んだ学習が、今回の予想とどうつながるか書こう</div>
+    <textarea id="connection" placeholder="例：3年生で「ものが燃えるには空気が必要」と学んだから、今回もふたをすると火が消えると予想した。"></textarea>
+
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const CURRICULUM = {
+  "3年": [
+    { name: "風とゴムの力", area: "運動", points: ["風の強さで動き方が変わる", "ゴムの伸ばし方で動き方が変わる"] },
+    { name: "光と音",       area: "物質", points: ["日光を集めると明るく・あたたかい", "音は物がふるえて伝わる"] },
+    { name: "磁石",         area: "物質", points: ["鉄を引きつける", "N極とS極", "引きあう・しりぞけあう"] },
+    { name: "電気の通り道", area: "物質", points: ["電気が一つのわになると通る", "金属は電気を通す"] },
+    { name: "ものの重さ",   area: "物質", points: ["形が変わっても重さは変わらない", "ものによって重さがちがう"] },
+    { name: "植物の成長",   area: "生物", points: ["種→芽→葉→花→実", "日光と水が必要"] },
+    { name: "こん虫",       area: "生物", points: ["頭・胸・腹の3つ", "成長の順番"] },
+    { name: "太陽と地面",   area: "地球", points: ["太陽は東から西へ", "日なたと日かげの温度差"] }
+  ],
+  "4年": [
+    { name: "電気のはたらき",   area: "物質", points: ["かん電池の数で電流が変わる", "直列と並列のちがい"] },
+    { name: "空気と水",         area: "物質", points: ["空気はおすと縮む", "水はおしても縮まない"] },
+    { name: "ものの温まり方",   area: "物質", points: ["金属は熱した所から順に温まる", "水・空気はあたためられた部分が上に行く"] },
+    { name: "水のすがた",       area: "物質", points: ["液体→気体（蒸発）→液体（凝結）", "水は100℃でふっとう、0℃でこおる"] },
+    { name: "季節と生物",       area: "生物", points: ["気温で動植物の活動が変わる", "1年の周期"] },
+    { name: "人の体のつくり",   area: "生物", points: ["骨と筋肉", "関節で曲がる"] },
+    { name: "天気と気温",       area: "地球", points: ["1日の気温変化のグラフ", "天気と気温の関係"] },
+    { name: "月と星",           area: "地球", points: ["月や星は時こくで位置が変わる", "星にはちがう明るさ・色がある"] }
+  ],
+  "5年": [
+    { name: "ふりこ",           area: "運動", points: ["長さで周期が変わる", "おもりの重さ・ふれはばは関係しない"] },
+    { name: "ものの溶け方",     area: "物質", points: ["溶ける量は温度・水の量で決まる", "溶けても重さは変わらない"] },
+    { name: "電磁石",           area: "物質", points: ["電流が強いほど磁力が強い", "コイルの巻き数で強さが変わる"] },
+    { name: "植物の発芽と成長", area: "生物", points: ["発芽には水・空気・温度が必要", "成長には肥料・日光が必要"] },
+    { name: "動物の誕生",       area: "生物", points: ["メダカ・人のたんじょう", "受精と成長"] },
+    { name: "花から実へ",       area: "生物", points: ["おしべ・めしべ・受粉", "実の中の種子"] },
+    { name: "流れる水",         area: "地球", points: ["浸食・運ぱん・たい積", "曲がりの内側と外側"] },
+    { name: "雲と天気",         area: "地球", points: ["雲の動きと天気変化", "天気は西から東へ"] }
+  ],
+  "6年": [
+    { name: "ものの燃え方",     area: "物質", points: ["燃えるには空気（酸素）が必要", "酸素が減り、二酸化炭素ができる"] },
+    { name: "水よう液",         area: "物質", points: ["酸性・中性・アルカリ性", "金属を溶かす水よう液"] },
+    { name: "てこ",             area: "運動", points: ["支点・力点・作用点", "つり合いのきまり"] },
+    { name: "電気の利用",       area: "物質", points: ["電気をつくる・ためる・使う", "光・音・熱・運動への変換"] },
+    { name: "人の体のはたらき", area: "生物", points: ["呼吸・消化・血液のじゅんかん", "臓器のはたらき"] },
+    { name: "植物のはたらき",   area: "生物", points: ["でんぷんを作る", "葉から水を出す（蒸散）"] },
+    { name: "生物と環境",       area: "生物", points: ["食物連鎖", "水・空気のじゅんかん"] },
+    { name: "土地のつくり",     area: "地球", points: ["地層・化石", "火山・地震"] },
+    { name: "月と太陽",         area: "地球", points: ["月の形の見え方の変化", "太陽と月の位置関係"] }
+  ]
+};
+
+const TOOL_ID = "prior-knowledge";
+let state = RikaNavi.load(TOOL_ID, { currentGrade: "5年", selected: [], connection: "" });
+
+function renderTabs() {
+  const tabs = document.getElementById("gradeTabs");
+  tabs.innerHTML = Object.keys(CURRICULUM).map(g => `
+    <button class="grade-tab ${state.currentGrade === g ? 'active' : ''}" data-grade="${g}">${g}</button>
+  `).join("");
+  tabs.querySelectorAll(".grade-tab").forEach(b => {
+    b.addEventListener("click", () => {
+      state.currentGrade = b.dataset.grade;
+      renderTabs();
+      renderUnits();
+    });
+  });
+}
+
+function renderUnits() {
+  const grid = document.getElementById("unitGrid");
+  const units = CURRICULUM[state.currentGrade] || [];
+  grid.innerHTML = units.map(u => {
+    const fullId = `${state.currentGrade}/${u.name}`;
+    const isSelected = state.selected.some(s => s.id === fullId);
+    return `
+      <div class="unit-card" data-id="${fullId}" data-grade="${state.currentGrade}" data-name="${u.name}" data-area="${u.area}" style="${isSelected ? 'border-color: var(--c2); background: #f8efff;' : ''}">
+        <div class="unit-name">${u.name}</div>
+        <ul class="unit-points">${u.points.map(p => `<li>${p}</li>`).join("")}</ul>
+        <div class="area-tag-row"><span class="area-tag">${u.area}</span></div>
+      </div>
+    `;
+  }).join("");
+  grid.querySelectorAll(".unit-card").forEach(c => {
+    c.addEventListener("click", () => {
+      const id = c.dataset.id;
+      const i = state.selected.findIndex(s => s.id === id);
+      if (i >= 0) state.selected.splice(i, 1);
+      else state.selected.push({ id, grade: c.dataset.grade, name: c.dataset.name, area: c.dataset.area });
+      renderUnits();
+      renderSelected();
+    });
+  });
+}
+
+function renderSelected() {
+  const wrap = document.getElementById("selectedUnits");
+  if (state.selected.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--ink-soft);font-style:italic;text-align:center;padding:6px 0;">単元を選ぶと、ここに並ぶよ</div>';
+    return;
+  }
+  wrap.innerHTML = state.selected.map(s => `
+    <span class="selected-unit-tag" data-id="${s.id}">${s.grade}・${s.name} ✕</span>
+  `).join("");
+  wrap.querySelectorAll(".selected-unit-tag").forEach(t => {
+    t.addEventListener("click", () => {
+      const id = t.dataset.id;
+      const i = state.selected.findIndex(s => s.id === id);
+      if (i >= 0) state.selected.splice(i, 1);
+      renderUnits();
+      renderSelected();
+    });
+  });
+}
+
+const connEl = document.getElementById("connection");
+connEl.value = state.connection || "";
+connEl.addEventListener("input", () => { state.connection = connEl.value; });
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const lines = [];
+  lines.push("【使う既習事項】");
+  state.selected.forEach(s => lines.push(`・${s.grade} ${s.name}`));
+  if (state.connection) {
+    lines.push("");
+    lines.push("【予想とのつながり】");
+    lines.push(state.connection);
+  }
+  RikaNavi.copy(lines.join("\n"));
+});
+
+renderTabs();
+renderUnits();
+renderSelected();
+</script>
+</body>
+</html>

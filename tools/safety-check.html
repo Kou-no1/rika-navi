@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全チェック ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.scene-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.scene-tab {
+  padding: 8px 12px;
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.scene-tab.active { background: var(--c3); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+
+.summary-bar {
+  background: linear-gradient(90deg, #c8f4d2 var(--pct), var(--bg-paper) var(--pct));
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  font-size: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s;
+}
+.danger-box {
+  background: #ffe9e3;
+  border-left: 4px solid var(--c4);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 14px;
+}
+.danger-title { font-weight: 900; color: var(--c4); margin-bottom: 4px; }
+</style>
+</head>
+<body data-step="3" data-tool-id="safety-check" data-tool-title="安全チェック" data-step-name="どうやって調べる？">
+
+<main>
+  <div class="tool-intro">
+    実験前に<strong>安全</strong>のチェックをしよう。けがや事故を防ぐためのチェックリストだよ。<br>
+    実験の内容に合わせて、場面を選ぼう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎯</span> 今日の実験</div>
+    <div class="scene-tabs" id="sceneTabs"></div>
+
+    <div class="summary-bar" id="summaryBar">
+      <span id="summaryText">チェックしてみよう</span>
+      <span id="summaryCount" style="font-size:14px;">0/0</span>
+    </div>
+
+    <div id="checkArea"></div>
+
+    <div id="dangerArea"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-small" id="resetBtn">チェックリセット</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const SCENES = {
+  fire: {
+    name: "🔥 火を使う",
+    items: [
+      "周りに燃えやすいもの(紙・布・髪)を置いていない",
+      "ぬれぞうきんを近くに用意した",
+      "髪の毛は結んでいる（長い場合）",
+      "そでがまくれている（ひらひらしない）",
+      "ガスバーナーの元せん・ねじを確認した",
+      "保護メガネをつけた",
+      "実験が終わったら火を必ず消す"
+    ],
+    danger: "やけど・火事。火を扱うときは絶対に1人にならず、必ず先生の合図で始めよう。"
+  },
+  chemical: {
+    name: "🧪 薬品を使う",
+    items: [
+      "保護メガネをつけた",
+      "薬品を直接さわらない（ゴム手袋を着用）",
+      "薬品のにおいは手であおいでかぐ",
+      "口に入れたり、なめたりしない",
+      "薬品の量を確認した（多すぎない）",
+      "近くに水道がある",
+      "実験後、容器をきれいに洗う"
+    ],
+    danger: "やけど・中毒・目のけが。薬品が皮ふや目につくとあぶない。すぐに水でよく洗おう。"
+  },
+  glass: {
+    name: "🔬 ガラス器具を使う",
+    items: [
+      "ガラスにヒビ・かけがないか確認した",
+      "急に温めたり冷やしたりしない（割れる原因）",
+      "ガラスはまるまる持つ（端だけだと落とす）",
+      "もし割れたら手でさわらず、先生を呼ぶ",
+      "実験台のはしに置かない（落下防止）"
+    ],
+    danger: "切り傷・破片によるけが。ガラスは静かに、ていねいに扱おう。"
+  },
+  electric: {
+    name: "⚡ 電気を使う",
+    items: [
+      "ぬれた手でさわらない",
+      "ショート（つなぎまちがい）に注意",
+      "電池の+−を確認した",
+      "コンセントに針金などを入れない",
+      "コードを引っぱって抜かない（プラグを持つ）",
+      "実験後はスイッチを切る"
+    ],
+    danger: "感電・やけど・ショート。電気は目に見えないからこわい。必ず先生の指示で。"
+  },
+  outdoor: {
+    name: "🌳 外で観察",
+    items: [
+      "ぼうしをかぶった（日射病予防）",
+      "水とうを持った",
+      "観察場所のあぶない所(道路・崖・水辺)を確認した",
+      "ハチ・毛虫など危険な生き物を確認した",
+      "見知らぬ人にはついていかない",
+      "勝手に植物・生き物を持ち帰らない"
+    ],
+    danger: "熱中症・転落・虫さされ。1人で行動せず、必ずグループで動こう。"
+  },
+  knife: {
+    name: "✂️ 刃物・はさみを使う",
+    items: [
+      "刃の向きをまわりの人に向けない",
+      "持つときは刃ではなく柄をもつ",
+      "切るときは指を切らないよう注意",
+      "使ったら必ず元の場所にしまう",
+      "ふざけて振り回さない"
+    ],
+    danger: "切り傷。集中して使い、使わないときはすぐにしまうこと。"
+  }
+};
+
+const TOOL_ID = "safety-check";
+let state = RikaNavi.load(TOOL_ID, { currentScene: "fire", checks: {} });
+
+function renderTabs() {
+  document.getElementById("sceneTabs").innerHTML = Object.keys(SCENES).map(k => `
+    <button class="scene-tab ${state.currentScene === k ? 'active' : ''}" data-k="${k}">${SCENES[k].name}</button>
+  `).join("");
+  document.querySelectorAll(".scene-tab").forEach(t => {
+    t.addEventListener("click", () => {
+      state.currentScene = t.dataset.k;
+      RikaNavi.save(TOOL_ID, state);
+      renderTabs();
+      renderChecks();
+    });
+  });
+}
+
+function renderChecks() {
+  const scene = SCENES[state.currentScene];
+  if (!state.checks[state.currentScene]) state.checks[state.currentScene] = {};
+  const checkMap = state.checks[state.currentScene];
+
+  document.getElementById("checkArea").innerHTML = `
+    <ul class="check-list">
+      ${scene.items.map((item, i) => {
+        const checked = !!checkMap[i];
+        return `
+          <li class="check-item ${checked ? 'checked' : ''}" data-i="${i}">
+            <input type="checkbox" ${checked ? 'checked' : ''}>
+            <span class="check-item-text">${RikaNavi.escapeHTML(item)}</span>
+          </li>
+        `;
+      }).join("")}
+    </ul>
+  `;
+
+  document.querySelectorAll(".check-item").forEach(it => {
+    it.addEventListener("click", (e) => {
+      if (e.target.tagName === "INPUT") return;
+      const i = parseInt(it.dataset.i);
+      const cb = it.querySelector("input");
+      cb.checked = !cb.checked;
+      checkMap[i] = cb.checked;
+      it.classList.toggle("checked", cb.checked);
+      updateSummary();
+      RikaNavi.save(TOOL_ID, state);
+    });
+    it.querySelector("input").addEventListener("change", (e) => {
+      const i = parseInt(it.dataset.i);
+      checkMap[i] = e.target.checked;
+      it.classList.toggle("checked", e.target.checked);
+      updateSummary();
+      RikaNavi.save(TOOL_ID, state);
+    });
+  });
+
+  document.getElementById("dangerArea").innerHTML = `
+    <div class="danger-box">
+      <div class="danger-title">⚠️ この実験のあぶないこと</div>
+      <div>${RikaNavi.escapeHTML(scene.danger)}</div>
+    </div>
+  `;
+
+  updateSummary();
+}
+
+function updateSummary() {
+  const scene = SCENES[state.currentScene];
+  const checkMap = state.checks[state.currentScene] || {};
+  const total = scene.items.length;
+  const done = scene.items.reduce((acc, _, i) => acc + (checkMap[i] ? 1 : 0), 0);
+  const pct = Math.round((done / total) * 100);
+  const bar = document.getElementById("summaryBar");
+  bar.style.setProperty("--pct", `${pct}%`);
+  document.getElementById("summaryCount").textContent = `${done}/${total}`;
+  let txt = "チェック中…";
+  if (pct === 100) txt = "🎉 全部チェック完了！実験OK!";
+  else if (pct >= 80) txt = "あと少し！";
+  else if (pct >= 50) txt = "半分以上できたよ";
+  document.getElementById("summaryText").textContent = txt;
+}
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (!confirm("チェックをリセットしますか？")) return;
+  state.checks[state.currentScene] = {};
+  RikaNavi.save(TOOL_ID, state);
+  renderChecks();
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のチェックを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+renderTabs();
+renderChecks();
+</script>
+</body>
+</html>

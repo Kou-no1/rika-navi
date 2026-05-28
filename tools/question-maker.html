@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>問題づくりサポーター ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+</head>
+<body data-step="1" data-tool-id="question-maker" data-tool-title="問題づくりサポーター" data-step-name="何を調べる？">
+
+<main>
+
+  <div class="tool-intro">
+    <strong>ふしぎだな</strong>と思ったことを、調べられる<strong>問題の形</strong>にしよう！<br>
+    順番に答えていくと、最後に問題ができあがるよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">①</span> どんなことに気づいた？</div>
+    <div class="section-subtitle">見たこと・気づいたこと・ふしぎだなと思ったこと</div>
+    <div class="field">
+      <textarea id="notice" placeholder="例：ろうそくにふたをしたら、火が消えた。&#10;例：朝顔は朝にさいて、夕方にはしぼんだ。"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">②</span> 何と何をくらべたい？</div>
+    <div class="section-subtitle">「Aのときは○○、Bのときは△△」というように、ちがいを比べよう</div>
+    <div class="field">
+      <label class="field-label">A：</label>
+      <input type="text" id="compareA" placeholder="例：ふたをしたとき">
+    </div>
+    <div class="field">
+      <label class="field-label">B：</label>
+      <input type="text" id="compareB" placeholder="例：ふたをしないとき">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">③</span> どんな見方で考える？</div>
+    <div class="section-subtitle">理科の「見方」をえらぼう（複数えらべるよ）</div>
+    <div id="viewpoints"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">④</span> 問題の形にしよう</div>
+    <div class="section-subtitle">下のボタンで型をえらぶと、自動で問題ができるよ</div>
+    <div class="field">
+      <label class="field-label">問題の型</label>
+      <select id="pattern">
+        <option value="diff">AとBでは、〇〇に どんなちがいがあるのだろうか？</option>
+        <option value="cause">〇〇は、なぜ△△するのだろうか？</option>
+        <option value="condition">〇〇するためには、どんな条件が 必要なのだろうか？</option>
+        <option value="change">〇〇を変えると、△△は どう変わるのだろうか？</option>
+        <option value="free">自由に書く</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">調べたい中心：</label>
+      <input type="text" id="topic" placeholder="例：火が燃え続ける">
+    </div>
+
+    <div class="preview-title">📝 できあがった問題</div>
+    <div class="preview" id="preview">
+      <div class="preview-empty">上に書いていくと、ここに問題があらわれます</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>よい問題のコツ</strong>：「はい/いいえ」で答えられる質問より、「どうして」「どう変わるか」を調べる問題にすると深く考えられるよ。
+  </div>
+
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "question-maker";
+const VIEWPOINTS = [
+  { id: "compare",   icon: "⚖️", label: "くらべる",       desc: "何かと比べて考える" },
+  { id: "cause",     icon: "🔗", label: "関係づける",     desc: "原因と結果をつなぐ" },
+  { id: "change",    icon: "🔄", label: "変化に注目",     desc: "時間で変わることを見る" },
+  { id: "qty",       icon: "🔢", label: "量で見る",       desc: "数や大きさで考える" },
+  { id: "shape",     icon: "📐", label: "形で見る",       desc: "形やつくりで考える" },
+  { id: "condition", icon: "🧪", label: "条件で見る",     desc: "条件を変えて考える" }
+];
+
+const DEFAULT = { notice: "", compareA: "", compareB: "", topic: "", pattern: "diff", viewpoints: [] };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+
+// 見方カードを表示
+function renderViewpoints() {
+  const wrap = document.getElementById("viewpoints");
+  wrap.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">' +
+    VIEWPOINTS.map(v => {
+      const active = state.viewpoints.includes(v.id);
+      return `
+        <div class="vp-card" data-id="${v.id}" style="
+          background:${active ? 'var(--c1)' : 'var(--bg-paper)'};
+          color:${active ? 'white' : 'var(--ink)'};
+          ${active ? 'text-shadow:1px 1px 0 rgba(0,0,0,0.2);' : ''}
+          border:2.5px solid var(--line);
+          border-radius:10px;
+          padding:10px 8px;
+          text-align:center;
+          cursor:pointer;
+          box-shadow:${active ? '4px 4px 0 var(--line)' : '2px 2px 0 var(--line)'};
+          transition:all 0.1s;
+          ">
+          <div style="font-size:22px;">${v.icon}</div>
+          <div style="font-weight:900;font-size:13px;margin-top:2px;">${v.label}</div>
+          <div style="font-size:10px;opacity:0.85;margin-top:2px;">${v.desc}</div>
+        </div>
+      `;
+    }).join("") + '</div>';
+
+  wrap.querySelectorAll(".vp-card").forEach(c => {
+    c.addEventListener("click", () => {
+      const id = c.dataset.id;
+      const i = state.viewpoints.indexOf(id);
+      if (i >= 0) state.viewpoints.splice(i, 1);
+      else state.viewpoints.push(id);
+      renderViewpoints();
+      updatePreview();
+    });
+  });
+}
+
+// 問題プレビュー生成
+function updatePreview() {
+  const p = document.getElementById("preview");
+  const topic = state.topic.trim();
+  const A = state.compareA.trim();
+  const B = state.compareB.trim();
+  let question = "";
+
+  if (state.pattern === "diff" && (A || B)) {
+    question = `${A || "〇〇"}と${B || "△△"}では、${topic || "どんなところ"}に どんなちがいがあるのだろうか？`;
+  } else if (state.pattern === "cause" && topic) {
+    question = `${topic}は、なぜそうなるのだろうか？`;
+  } else if (state.pattern === "condition" && topic) {
+    question = `${topic}ためには、どんな条件が 必要なのだろうか？`;
+  } else if (state.pattern === "change" && topic) {
+    question = `${topic}を変えると、結果は どう変わるのだろうか？`;
+  } else if (state.pattern === "free") {
+    question = topic || "";
+  }
+
+  if (!question) {
+    p.innerHTML = '<div class="preview-empty">上に書いていくと、ここに問題があらわれます</div>';
+    return;
+  }
+
+  const vpLabels = state.viewpoints.map(id => {
+    const v = VIEWPOINTS.find(x => x.id === id);
+    return v ? `<span class="tag" style="margin-right:4px;">${v.icon} ${v.label}</span>` : "";
+  }).join("");
+
+  p.innerHTML = `<div style="font-weight:900;font-size:16px;margin-bottom:8px;">問題：${RikaNavi.escapeHTML(question)}</div>` +
+    (vpLabels ? `<div style="margin-top:8px;">使う見方：${vpLabels}</div>` : "");
+}
+
+// 入力監視
+function bindInputs() {
+  ["notice","compareA","compareB","topic"].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = state[id] || "";
+    el.addEventListener("input", () => { state[id] = el.value; updatePreview(); });
+  });
+  const pat = document.getElementById("pattern");
+  pat.value = state.pattern;
+  pat.addEventListener("change", () => { state.pattern = pat.value; updatePreview(); });
+}
+
+// ボタン
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => { ind.textContent = ""; }, 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const text = document.getElementById("preview").innerText;
+  RikaNavi.copy(text);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("入力をすべてクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  bindInputs();
+  renderViewpoints();
+  updatePreview();
+});
+
+// 初期化
+renderViewpoints();
+bindInputs();
+updatePreview();
+</script>
+
+</body>
+</html>

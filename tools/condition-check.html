@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>条件制御チェック ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.compare-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.compare-table th, .compare-table td {
+  border: 2px solid var(--line);
+  padding: 8px;
+  font-size: 13px;
+  background: white;
+}
+.compare-table th {
+  background: var(--c3);
+  color: white;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  font-family: var(--font-display);
+}
+.compare-table td input { border: 0; padding: 4px; background: transparent; width: 100%; }
+.compare-table td input:focus { outline: 2px solid var(--c3); border-radius: 4px; }
+.status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+.status-pill { padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; border: 2.5px solid var(--line); }
+.status-pill.ok { background: #e6f7ed; color: var(--ok); }
+.status-pill.ng { background: #fde8e8; color: var(--ng); }
+.status-pill.warn { background: #fff4dd; color: var(--warn); }
+
+.quiz-box {
+  background: linear-gradient(135deg, #fff 0%, #fff8e8 100%);
+  border: 3px dashed var(--c3);
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 16px;
+}
+.quiz-text { font-weight: 700; margin-bottom: 10px; font-size: 14px; }
+.quiz-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.quiz-option {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px;
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: var(--shadow-sm);
+}
+.quiz-option:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-md); }
+.quiz-option.selected.correct { background: #c8f4d2; border-color: var(--ok); }
+.quiz-option.selected.wrong { background: #fbd6d6; border-color: var(--ng); }
+.quiz-fb { margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 700; display: none; }
+.quiz-fb.show { display: block; }
+.quiz-fb.correct { background: #e6f7ed; color: var(--ok); border: 2px solid var(--c5); }
+.quiz-fb.wrong { background: #fde8e8; color: var(--ng); border: 2px solid var(--c4); }
+</style>
+</head>
+<body data-step="3" data-tool-id="condition-check" data-tool-title="条件制御チェック" data-step-name="どうやって調べる？">
+
+<main>
+  <div class="tool-intro">
+    実験は <strong>「変える条件」と「同じにする条件」</strong> を分けることが大切。<br>
+    自分の計画が正しいか、ここでチェックしよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📊</span> 条件をくらべる表</div>
+    <div class="field-help">条件AとBで、何が「変える」「同じ」になっているか、はっきりさせよう</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th style="width:40%;">条件</th>
+          <th>A</th>
+          <th>B</th>
+        </tr>
+      </thead>
+      <tbody id="conditionTable"></tbody>
+    </table>
+    <button class="add-btn" id="addRowBtn" style="margin-top:8px;border:2.5px dashed var(--ink-soft);background:transparent;padding:8px 16px;border-radius:10px;font-family:var(--font-body);font-weight:700;font-size:13px;cursor:pointer;color:var(--ink-soft);width:100%;">+ 条件を追加</button>
+
+    <div id="diagnosis" style="margin-top:14px;"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎓</span> 条件制御クイズ</div>
+    <div class="section-subtitle">考えを試してみよう（何回でもチャレンジOK）</div>
+    <div id="quizArea"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "condition-check";
+const DEFAULT = {
+  rows: [
+    { name: "", a: "", b: "" },
+    { name: "", a: "", b: "" },
+    { name: "", a: "", b: "" }
+  ]
+};
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.rows) || state.rows.length === 0) state.rows = DEFAULT.rows;
+
+function renderTable() {
+  const tbody = document.getElementById("conditionTable");
+  tbody.innerHTML = state.rows.map((r, i) => `
+    <tr>
+      <td><input type="text" data-i="${i}" data-field="name" value="${RikaNavi.escapeHTML(r.name)}" placeholder="例：水の量"></td>
+      <td><input type="text" data-i="${i}" data-field="a" value="${RikaNavi.escapeHTML(r.a)}" placeholder="例：100ml"></td>
+      <td><input type="text" data-i="${i}" data-field="b" value="${RikaNavi.escapeHTML(r.b)}" placeholder="例：100ml"></td>
+    </tr>
+  `).join("");
+  tbody.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const i = parseInt(inp.dataset.i);
+      state.rows[i][inp.dataset.field] = inp.value;
+      diagnose();
+      RikaNavi.save(TOOL_ID, state);
+    });
+  });
+}
+
+function diagnose() {
+  // 同条件と異条件をカウント
+  const filled = state.rows.filter(r => r.name.trim() && r.a.trim() && r.b.trim());
+  let sameCount = 0, diffCount = 0;
+  const diffs = [];
+  filled.forEach(r => {
+    if (r.a.trim() === r.b.trim()) sameCount++;
+    else { diffCount++; diffs.push(r.name); }
+  });
+
+  let status = "warn", msg = "条件をすべて書いてみよう（3行以上書くと判定が出るよ）";
+
+  if (filled.length >= 2) {
+    if (diffCount === 1) {
+      status = "ok";
+      msg = `✅ OK！ 変える条件は「${diffs[0]}」だけ。他は同じ。これが条件制御だよ。`;
+    } else if (diffCount === 0) {
+      status = "warn";
+      msg = "⚠️ AとBがまったく同じだよ。何かを変えないと、ちがいが見えないよ。";
+    } else {
+      status = "ng";
+      msg = `❌ 変えている条件が ${diffCount} 個あるよ（${diffs.join("、")}）。何が原因か分からなくなるから、変えるのは1つだけにしよう。`;
+    }
+  }
+
+  document.getElementById("diagnosis").innerHTML = `
+    <div class="status-row">
+      <div class="status-pill ${status}">${msg}</div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--ink-soft);">
+      入力された条件：${filled.length}個 ／ 変える：${diffCount} ／ 同じ：${sameCount}
+    </div>
+  `;
+}
+
+document.getElementById("addRowBtn").addEventListener("click", () => {
+  state.rows.push({ name: "", a: "", b: "" });
+  renderTable();
+});
+
+renderTable();
+diagnose();
+
+/* ===== クイズ ===== */
+const QUIZZES = [
+  {
+    q: "ふりこの周期が、ふりこの長さで変わるか調べたい。正しい条件制御は？",
+    options: [
+      { text: "ふりこAは長さ20cm・おもり10g・ふれはば30°、Bは長さ40cm・おもり20g・ふれはば60°", correct: false, explain: "長さもおもりもふれはばも変わっているよ。これでは何が原因か分からない。" },
+      { text: "ふりこAは長さ20cm・おもり10g・ふれはば30°、Bは長さ40cm・おもり10g・ふれはば30°", correct: true, explain: "長さだけが変わって、おもりとふれはばは同じ。これが正しい条件制御！" },
+      { text: "ふりこAもBも長さ20cm・おもり10g・ふれはば30°", correct: false, explain: "AとBで何も変わっていない。これだと比べられないよ。" }
+    ]
+  },
+  {
+    q: "種子の発芽に水が必要か調べたい。Aには水あり・温度20℃・空気あり、Bには？",
+    options: [
+      { text: "水なし・温度5℃・空気なし", correct: false, explain: "水以外に温度と空気も変えてしまっている。発芽しなくても、何が原因か分からない。" },
+      { text: "水なし・温度20℃・空気あり", correct: true, explain: "水だけが変わっている。これで発芽しなければ「水が必要」と分かる。" },
+      { text: "水あり・温度20℃・空気あり", correct: false, explain: "AとBが同じ。比べられない。" }
+    ]
+  },
+  {
+    q: "金属の熱の伝わり方を調べたい。鉄と銅の棒を比べる場合、何をそろえる？",
+    options: [
+      { text: "棒の長さ・太さ・熱し方", correct: true, explain: "金属の種類だけが「変える条件」。それ以外（長さ・太さ・熱し方）は同じにそろえる。" },
+      { text: "金属の種類・棒の長さ", correct: false, explain: "金属の種類は「変える条件」だからそろえちゃダメ。" },
+      { text: "そろえなくてもよい", correct: false, explain: "そろえないと、何が原因で結果が変わったか分からなくなるよ。" }
+    ]
+  }
+];
+
+function renderQuiz() {
+  const wrap = document.getElementById("quizArea");
+  wrap.innerHTML = QUIZZES.map((q, qi) => `
+    <div class="quiz-box">
+      <div class="quiz-text">Q${qi+1}. ${RikaNavi.escapeHTML(q.q)}</div>
+      <div class="quiz-options">
+        ${q.options.map((o, oi) => `
+          <button class="quiz-option" data-q="${qi}" data-o="${oi}">${RikaNavi.escapeHTML(o.text)}</button>
+        `).join("")}
+      </div>
+      <div class="quiz-fb" id="fb-${qi}"></div>
+    </div>
+  `).join("");
+
+  wrap.querySelectorAll(".quiz-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const qi = parseInt(btn.dataset.q);
+      const oi = parseInt(btn.dataset.o);
+      const opt = QUIZZES[qi].options[oi];
+      // リセット
+      wrap.querySelectorAll(`.quiz-option[data-q="${qi}"]`).forEach(b => {
+        b.classList.remove("selected","correct","wrong");
+      });
+      btn.classList.add("selected", opt.correct ? "correct" : "wrong");
+      const fb = document.getElementById(`fb-${qi}`);
+      fb.className = "quiz-fb show " + (opt.correct ? "correct" : "wrong");
+      fb.textContent = (opt.correct ? "⭕ せいかい！ " : "💡 もう一度！ ") + opt.explain;
+    });
+  });
+}
+renderQuiz();
+</script>
+</body>
+</html>
