@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理科問題解決ナビ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   理科問題解決ナビ
+   ============================================ */
+
+:root {
+  /* ベース */
+  --bg: #fffaf0;
+  --bg-paper: #fff;
+  --ink: #2b2b3d;
+  --ink-soft: #5a5a72;
+  --line: #2b2b3d;
+  --muted: #d8d3c4;
+
+  /* アクセント */
+  --accent: #ffd84d;
+  --accent-2: #ff7d6b;
+
+  /* ステップカラー（8色） */
+  --c1: #5BA8E8;  /* 何を調べる */
+  --c2: #B57AE0;  /* どうなると思う */
+  --c3: #FF9D4D;  /* どうやって調べる */
+  --c4: #FF6B6B;  /* 実験する */
+  --c5: #5FCB8B;  /* 整理する */
+  --c6: #4A6FB8;  /* 結果から考える */
+  --c7: #FF85B5;  /* 伝える */
+  --c8: #6CCED0;  /* ふり返る */
+
+  /* シャドウ */
+  --shadow-sm: 3px 3px 0 var(--line);
+  --shadow-md: 5px 5px 0 var(--line);
+  --shadow-lg: 7px 7px 0 var(--line);
+
+  /* 字 */
+  --font-display: "Zen Maru Gothic", "Kosugi Maru", system-ui, sans-serif;
+  --font-body: "Kosugi Maru", "Zen Maru Gothic", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255, 216, 77, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(255, 125, 107, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(91, 168, 232, 0.08) 0%, transparent 60%);
+  min-height: 100vh;
+  line-height: 1.7;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ノート風グリッド背景 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(43, 43, 61, 0.04) 1px, transparent 1px);
+  background-size: 100% 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+main, header { position: relative; z-index: 1; }
+
+/* ============================================
+   ヘッダー
+   ============================================ */
+header {
+  padding: 24px 20px 16px;
+  text-align: center;
+}
+
+.logo-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  background: var(--bg-paper);
+  padding: 12px 24px;
+  border: 3px solid var(--line);
+  border-radius: 24px 4px 24px 4px;
+  box-shadow: var(--shadow-md);
+  transform: rotate(-1deg);
+  margin-bottom: 8px;
+}
+
+h1.title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(22px, 5vw, 32px);
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+
+.title-mark {
+  display: inline-block;
+  font-size: 0.7em;
+  background: var(--accent);
+  border: 2px solid var(--line);
+  padding: 2px 8px;
+  border-radius: 6px;
+  transform: translateY(-4px);
+}
+
+.subtitle {
+  color: var(--ink-soft);
+  font-size: clamp(13px, 3vw, 15px);
+  margin-top: 4px;
+}
+
+/* ============================================
+   メインレイアウト
+   ============================================ */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px 60px;
+}
+
+/* ============================================
+   今日の学習
+   ============================================ */
+.today-board {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+
+.today-board::before {
+  content: "📌";
+  position: absolute;
+  top: -16px;
+  left: 24px;
+  font-size: 28px;
+  background: var(--accent);
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.today-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  letter-spacing: 0.12em;
+  margin-left: 56px;
+  margin-bottom: 6px;
+}
+
+.today-board .field-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px 14px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.today-board .field-label {
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 14px;
+  padding-top: 2px;
+}
+
+.today-board .field-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.today-edit-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--line);
+  transition: transform 0.1s;
+}
+.today-edit-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--line); }
+.today-edit-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--line); }
+
+/* ============================================
+   進捗バー
+   ============================================ */
+.progress-section {
+  margin-bottom: 24px;
+}
+
+.progress-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.progress-bar {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.progress-dot {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg-paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  position: relative;
+  transition: all 0.2s;
+}
+
+.progress-dot.in-progress {
+  background: var(--accent);
+  transform: scale(1.15);
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+.progress-dot.done {
+  background: var(--c5);
+  color: white;
+}
+
+.progress-dot.done::after {
+  content: "✓";
+  position: absolute;
+  font-size: 14px;
+}
+.progress-dot.done { font-size: 0; }
+
+/* ============================================
+   セクションタイトル
+   ============================================ */
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(18px, 4.5vw, 22px);
+  text-align: center;
+  margin: 32px 0 20px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title::before,
+.section-title::after {
+  content: "";
+  display: inline-block;
+  width: 30px;
+  height: 3px;
+  background: var(--ink);
+}
+
+/* ============================================
+   ステップカードグリッド
+   ============================================ */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .steps-grid { grid-template-columns: 1fr; }
+}
+
+.step-card {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 14px 14px;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.12s, box-shadow 0.12s;
+  font-family: var(--font-body);
+}
+
+.step-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--line);
+}
+
+.step-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+.step-number {
+  position: absolute;
+  top: -12px;
+  left: -10px;
+  width: 32px;
+  height: 32px;
+  background: var(--card-color, var(--accent));
+  color: white;
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.step-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  letter-spacing: 0.05em;
+}
+
+.step-status.in-progress { background: var(--accent); }
+.step-status.done { background: var(--c5); color: white; }
+
+.step-icon {
+  font-size: 38px;
+  display: block;
+  margin: 12px 0 4px;
+  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.08));
+}
+
+.step-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 16px;
+  margin: 6px 0 4px;
+  letter-spacing: 0.03em;
+}
+
+.step-desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  min-height: 2.5em;
+}
+
+.step-card[data-step="1"] { --card-color: var(--c1); }
+.step-card[data-step="2"] { --card-color: var(--c2); }
+.step-card[data-step="3"] { --card-color: var(--c3); }
+.step-card[data-step="4"] { --card-color: var(--c4); }
+.step-card[data-step="5"] { --card-color: var(--c5); }
+.step-card[data-step="6"] { --card-color: var(--c6); }
+.step-card[data-step="7"] { --card-color: var(--c7); }
+.step-card[data-step="8"] { --card-color: var(--c8); }
+
+/* カード上部のカラーバー */
+.step-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: var(--card-color);
+  border-radius: 13px 13px 0 0;
+}
+
+/* ============================================
+   詳細パネル（モーダル風）
+   ============================================ */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 43, 61, 0.5);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 100;
+  overflow-y: auto;
+  padding: 20px 12px;
+}
+
+.detail-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.detail-panel {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 20px;
+  max-width: 720px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.detail-header {
+  background: var(--panel-color, var(--accent));
+  padding: 20px 60px 20px 24px;
+  border-bottom: 3px solid var(--line);
+  position: relative;
+}
+
+.detail-header-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.detail-icon {
+  font-size: 44px;
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 3px 3px 0 var(--line);
+}
+
+.detail-step-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--bg-paper);
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 2px solid var(--line);
+  margin-bottom: 4px;
+  letter-spacing: 0.1em;
+}
+
+.detail-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(20px, 4.5vw, 26px);
+  color: white;
+  text-shadow: 2px 2px 0 var(--line);
+  letter-spacing: 0.04em;
+}
+
+.detail-teacher-word {
+  font-size: 12px;
+  color: var(--ink);
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 var(--line);
+  font-family: var(--font-body);
+}
+.close-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--line); }
+.close-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--line); }
+
+.detail-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* status切り替えバー */
+.status-switcher {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: var(--bg);
+  padding: 6px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+}
+
+.status-switcher button {
+  flex: 1;
+  padding: 8px 4px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.status-switcher button.active {
+  background: var(--panel-color, var(--accent));
+  color: white;
+  border-color: var(--line);
+  box-shadow: 2px 2px 0 var(--line);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+/* セクションブロック */
+.block {
+  margin-bottom: 22px;
+}
+
+.block-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 3px dotted var(--muted);
+}
+
+.block-emoji {
+  font-size: 22px;
+}
+
+.thinking-list,
+.hint-list {
+  list-style: none;
+  padding: 0;
+}
+
+.thinking-list li,
+.hint-list li {
+  padding: 8px 14px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  border: 2px solid var(--muted);
+  border-radius: 10px;
+  font-size: 14px;
+  position: relative;
+  padding-left: 32px;
+}
+
+.thinking-list li::before {
+  content: "💭";
+  position: absolute;
+  left: 8px;
+  top: 7px;
+}
+
+.hint-list li::before {
+  content: "💡";
+  position: absolute;
+  left: 8px;
+  top: 7px;
+}
+
+/* 文型入力エリア */
+.frame-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.frame-item {
+  background: var(--bg);
+  border: 2px solid var(--muted);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.frame-template {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+  background: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed var(--muted);
+}
+
+.frame-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  resize: vertical;
+  background: white;
+  line-height: 1.6;
+}
+
+.frame-input:focus {
+  outline: none;
+  background: #fffcf0;
+  box-shadow: 2px 2px 0 var(--line);
+}
+
+.frame-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-paper);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--line);
+  transition: transform 0.1s;
+}
+
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--line); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--line); }
+
+.btn-primary { background: var(--accent); }
+.btn-copy { background: var(--c8); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+
+.save-notice {
+  font-size: 12px;
+  color: var(--c5);
+  font-weight: 700;
+  margin-top: 6px;
+  text-align: right;
+  min-height: 1em;
+}
+
+/* ツールリスト */
+.tool-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 540px) { .tool-list { grid-template-columns: 1fr; } }
+
+.tool-card {
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  position: relative;
+}
+
+.tool-name {
+  font-weight: 900;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.tool-desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.tool-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: var(--muted);
+}
+
+/* ============================================
+   結果vs考察ミニチェック（Step5,6専用）
+   ============================================ */
+.fact-check {
+  background: linear-gradient(135deg, #fff 0%, #fff8e8 100%);
+  border: 3px dashed var(--c6);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 22px;
+}
+
+.fact-check-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--c6);
+}
+
+.fact-check-desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+
+.fact-quiz {
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.fact-quiz-text {
+  font-size: 14px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.fact-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.fact-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--line);
+}
+.fact-btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--line); }
+.fact-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--line); }
+
+.fact-btn.fact { background: var(--c1); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+.fact-btn.opinion { background: var(--c2); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+
+.fact-feedback {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  display: none;
+}
+.fact-feedback.correct { background: #e6f7ed; color: #1e7e44; border: 2px solid #5fcb8b; display: block; }
+.fact-feedback.wrong { background: #fde8e8; color: #b13a3a; border: 2px solid #ff7d6b; display: block; }
+
+/* ============================================
+   教師用設定モーダル
+   ============================================ */
+.teacher-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 43, 61, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.teacher-modal.active { display: flex; }
+
+.teacher-modal-inner {
+  background: var(--bg-paper);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+.teacher-modal-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 18px;
+  margin-bottom: 16px;
+  border-bottom: 3px solid var(--ink);
+  padding-bottom: 8px;
+}
+
+.teacher-form-row {
+  margin-bottom: 14px;
+}
+
+.teacher-form-row label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+}
+
+.teacher-form-row input,
+.teacher-form-row textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: white;
+}
+
+.teacher-form-row textarea { min-height: 70px; resize: vertical; }
+
+.teacher-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.reset-progress-btn {
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* ============================================
+   トースト
+   ============================================ */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--ink);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s;
+  z-index: 300;
+  border: 3px solid var(--accent);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ============================================
+   フッター
+   ============================================ */
+footer {
+  text-align: center;
+  padding: 30px 16px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  position: relative;
+  z-index: 1;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-row">
+    <h1 class="title">理科<span class="title-mark">問題解決</span>ナビ</h1>
+  </div>
+  <p class="subtitle">いまの学習に合わせて、使うツールをえらぼう</p>
+</header>
+
+<main>
+
+  <!-- 今日の学習 -->
+  <section class="today-board">
+    <button class="today-edit-btn" id="editTodayBtn">✏️ 教師用</button>
+    <div class="today-label">きょうの学習</div>
+    <div class="field-row">
+      <div class="field-label">単元</div>
+      <div class="field-value" id="todayUnit">ものの燃え方</div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">問題</div>
+      <div class="field-value" id="todayQuestion">ものが燃え続けるには、何が必要なのだろうか？</div>
+    </div>
+  </section>
+
+  <!-- 進捗バー -->
+  <section class="progress-section">
+    <div class="progress-title">――― いまどこ？ ―――</div>
+    <div class="progress-bar" id="progressBar"></div>
+  </section>
+
+  <!-- ステップ選択 -->
+  <h2 class="section-title">いまの学習を えらぼう</h2>
+  <div class="steps-grid" id="stepsGrid"></div>
+
+</main>
+
+<!-- 詳細パネル -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-panel" id="detailPanel">
+    <!-- 動的生成 -->
+  </div>
+</div>
+
+<!-- 教師用モーダル -->
+<div class="teacher-modal" id="teacherModal">
+  <div class="teacher-modal-inner">
+    <div class="teacher-modal-title">👩‍🏫 教師用 設定</div>
+    <div class="teacher-form-row">
+      <label for="unitInput">単元名</label>
+      <input type="text" id="unitInput">
+    </div>
+    <div class="teacher-form-row">
+      <label for="questionInput">今日の問題</label>
+      <textarea id="questionInput"></textarea>
+    </div>
+    <div class="teacher-form-row">
+      <label>進捗のリセット</label>
+      <button class="reset-progress-btn" id="resetProgressBtn">🔄 すべてのステップを未着手に戻す</button>
+    </div>
+    <div class="teacher-form-actions">
+      <button class="btn" id="teacherCancelBtn">キャンセル</button>
+      <button class="btn btn-primary" id="teacherSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<footer>
+  理科問題解決ナビ ver.1.0 ／ © 2026
+</footer>
+
+<script>
+/* ============================================
+   データ定義
+   ============================================ */
+const STEPS = [
+  {
+    id: "question",
+    num: 1,
+    icon: "🔍",
+    title: "何を調べる？",
+    teacherWord: "問題設定",
+    description: "ふしぎに思ったことを問題にしよう",
+    thinking: [
+      "何と何をくらべたいかな？",
+      "なぜ？と思ったことは何かな？",
+      "変えるとどうなりそうかな？"
+    ],
+    hints: [
+      "前に学習したこととつなげて考えよう。",
+      "生活の中で似たことがなかったか思い出そう。",
+      "ふしぎだなと感じたことを大切にしよう。"
+    ],
+    frames: [
+      "わたしは、〇〇について調べたいです。",
+      "なぜなら、〇〇と思ったからです。",
+      "〇〇と〇〇をくらべると、何がちがうのか調べたいです。"
+    ],
+    tools: [
+      { name: "問題づくりサポーター", desc: "調べたいことを問題の形にする。", url: "tools/question-maker.html" },
+      { name: "思考ツールナビゲーター", desc: "どの考え方を使うか選ぶ。", url: "tools/thinking-navi.html" },
+      { name: "理科の見方カード", desc: "理科の見方の選択肢を見る。", url: "tools/view-cards.html" }
+    ]
+  },
+  {
+    id: "prediction",
+    num: 2,
+    icon: "💭",
+    title: "どうなると思う？",
+    teacherWord: "予想・仮説",
+    description: "理由をつけて予想しよう",
+    thinking: [
+      "どうなると思うかな？",
+      "なぜそう思うかな？",
+      "もし〇〇なら、どうなるかな？"
+    ],
+    hints: [
+      "前に学習したことを使って考えよう。",
+      "生活の中で似たことはなかったかな？",
+      "「なんとなく」ではなく、理由をセットで書こう。"
+    ],
+    frames: [
+      "わたしは、〇〇になると思います。",
+      "理由は、〇〇だからです。",
+      "もし〇〇なら、〇〇になるはずです。"
+    ],
+    tools: [
+      { name: "予想・仮説メーカー", desc: "予想と理由をセットで考える。", url: "tools/prediction-maker.html" },
+      { name: "理由づけテンプレート", desc: "「なぜなら〜」の形で考える。", url: "tools/reason-template.html" },
+      { name: "既習事項ふり返りカード", desc: "前の学習を思い出す。", url: "tools/prior-knowledge.html" }
+    ]
+  },
+  {
+    id: "plan",
+    num: 3,
+    icon: "🧪",
+    title: "どうやって調べる？",
+    teacherWord: "実験計画",
+    description: "条件を整理して計画を立てよう",
+    thinking: [
+      "何を変える？(変える条件は1つだけ)",
+      "何を同じにする？",
+      "何を調べる？どうやって記録する？"
+    ],
+    hints: [
+      "変える条件は1つだけにできているかな？",
+      "同じにする条件は何かな？",
+      "安全に気をつけることは何かな?",
+      "結果をどうやって記録するか決めよう。"
+    ],
+    frames: [
+      "調べることは、〇〇です。",
+      "変える条件は、〇〇です。",
+      "同じにする条件は、〇〇です。",
+      "調べる方法は、〇〇です。",
+      "気をつけることは、〇〇です。"
+    ],
+    tools: [
+      { name: "実験計画ナビゲーター", desc: "実験の計画を順番に考える。", url: "tools/plan-navigator.html" },
+      { name: "条件制御チェック", desc: "変える・同じにする条件を確認。", url: "tools/condition-check.html" },
+      { name: "安全チェック", desc: "実験前の安全確認。", url: "tools/safety-check.html" },
+      { name: "役割ルーレット", desc: "実験の役割を決める。", url: "tools/role-roulette.html" }
+    ]
+  },
+  {
+    id: "experiment",
+    num: 4,
+    icon: "⚗️",
+    title: "実験する",
+    teacherWord: "実験",
+    description: "役割を決めて、安全に実験しよう",
+    thinking: [
+      "役割は決まっているかな？",
+      "道具は正しく使えているかな？",
+      "気づいたことをすぐ記録しよう"
+    ],
+    hints: [
+      "実験リーダー、記録係、道具係、時間係、安全確認係を決めよう。",
+      "結果はその場ですぐ記録しよう。",
+      "予想していなかった気づきもメモしておこう。",
+      "うまくいかなかったときは、なぜか考えよう。"
+    ],
+    frames: [
+      "わたしの役割は、〇〇です。",
+      "実験で気づいたことは、〇〇です。",
+      "予想していなかったことは、〇〇です。"
+    ],
+    tools: [
+      { name: "実験リーダールーレット", desc: "リーダーを決める。" },
+      { name: "役割分担カード", desc: "班の役割を割り当てる。" },
+      { name: "安全確認チェック", desc: "実験中の安全をたしかめる。" },
+      { name: "観察メモ", desc: "気づいたことを記録する。" }
+    ]
+  },
+  {
+    id: "organize",
+    num: 5,
+    icon: "📊",
+    title: "分かったことを整理する",
+    teacherWord: "結果整理",
+    description: "見えたこと・測ったことを書こう",
+    thinking: [
+      "見えたこと・測ったことは何？",
+      "それは事実(結果)？それとも考えたこと(考察)？",
+      "表やグラフにすると分かりやすいかな？"
+    ],
+    hints: [
+      "結果には「事実」だけを書こう。考えたことは次のステップで！",
+      "だれが見ても同じように分かるように書こう。",
+      "数字や色、時間など、見たままを書こう。",
+      "表やグラフにすると比べやすいよ。"
+    ],
+    frames: [
+      "結果は、〇〇でした。",
+      "〇〇を見ると、〇〇になっていました。",
+      "AとBを比べると、〇〇の方が〇〇でした。"
+    ],
+    tools: [
+      { name: "結果整理ボード", desc: "結果を表で整理する。" },
+      { name: "表・グラフ作成サポート", desc: "グラフを作る。" },
+      { name: "写真記録カード", desc: "写真で残す。" },
+      { name: "結果と考察の違いチェック", desc: "結果と考察を分ける。" }
+    ],
+    factCheck: true,
+    factCheckIntro: "下の文は「結果(事実)」かな？「考察(考えたこと)」かな？ ためしてみよう。",
+    factCheckQuiz: [
+      { text: "ろうそくの火は、5分後に消えた。", answer: "fact", explainOK: "数字や事実だけ書いてあるね。これは結果！", explainNG: "これは「見えたこと・測ったこと」だから、結果(事実)だよ。" },
+      { text: "ろうそくの火が消えたのは、空気がなくなったからだ。", answer: "opinion", explainOK: "「だからこうだ」と考えているね。これは考察！", explainNG: "「〇〇だから△△」と理由を考えているね。これは考察(考えたこと)だよ。" },
+      { text: "ビーカーAの方が、Bよりも長く燃えていた。", answer: "fact", explainOK: "比べて見えたままを書いているね。結果だよ。", explainNG: "見えたまま比べているから、これは結果(事実)。" }
+    ]
+  },
+  {
+    id: "consideration",
+    num: 6,
+    icon: "🧠",
+    title: "結果から考える",
+    teacherWord: "考察",
+    description: "結果から何が言えるか考えよう",
+    thinking: [
+      "結果から分かることは何かな？",
+      "予想と同じだった？ちがった？",
+      "なぜそうなったか、理由を考えよう"
+    ],
+    hints: [
+      "「結果は〇〇 → だから〇〇と考えた」の順で書こう。",
+      "予想と結果を比べて、どこが同じでどこがちがったか書こう。",
+      "友達の結果や考えと比べると、新しい気づきがあるよ。",
+      "考察は「考えたこと」。結果(事実)とは分けて書こう。"
+    ],
+    frames: [
+      "結果は、〇〇でした。",
+      "このことから、〇〇と考えました。",
+      "理由は、〇〇だからです。",
+      "予想と比べると、〇〇でした。",
+      "友達の考えと比べて、〇〇と思いました。",
+      "だから、〇〇とまとめます。"
+    ],
+    tools: [
+      { name: "考察ビルダー", desc: "結果・理由・まとめを順に作る。" },
+      { name: "証拠・理由・主張チェック", desc: "考察を点検する。" },
+      { name: "友達との比較カード", desc: "友達の考えと比べる。" },
+      { name: "思考ツールナビゲーター", desc: "考え方を選ぶ。" }
+    ],
+    factCheck: true,
+    factCheckIntro: "「結果」と「考察」、ちゃんと分けて書けてる？クイズで確認!",
+    factCheckQuiz: [
+      { text: "豆電球がついたから、回路に電気が流れた。", answer: "opinion", explainOK: "理由をつけて考えているね。これは考察!", explainNG: "「〇〇だから〇〇」と考えているから、考察だよ。" },
+      { text: "ふりこの周期は1秒だった。", answer: "fact", explainOK: "測った数値そのまま。これは結果。", explainNG: "数値を測っただけだから、結果(事実)だね。" },
+      { text: "重さが関係しているから、結果がちがった。", answer: "opinion", explainOK: "原因を考えているね。考察!", explainNG: "原因を考えて言っているから、考察だよ。" }
+    ]
+  },
+  {
+    id: "present",
+    num: 7,
+    icon: "📣",
+    title: "みんなに伝える",
+    teacherWord: "表現",
+    description: "結果→考察→まとめの順で発表しよう",
+    thinking: [
+      "まず結果。次に考察。最後にまとめ。",
+      "理由をつけて説明できるかな?",
+      "相手を見て、聞こえる声で話そう"
+    ],
+    hints: [
+      "発表の順番:結果 → 考えたこと → 理由 → まとめ",
+      "予想と比べてどうだったかも伝えよう。",
+      "聞き手に質問されたら、結果や記録を見ながら答えよう。",
+      "聞く人は、うなずきや拍手で反応しよう。"
+    ],
+    frames: [
+      "わたしたちの結果は、〇〇でした。",
+      "この結果から、〇〇と考えました。",
+      "理由は、〇〇だからです。",
+      "予想と比べると、〇〇でした。",
+      "以上のことから、〇〇とまとめました。"
+    ],
+    tools: [
+      { name: "発表リハーサル", desc: "本番前に練習。" },
+      { name: "発表文テンプレート", desc: "話す順番のひな型。" },
+      { name: "聞き手チェックカード", desc: "聞き方のコツ。" },
+      { name: "質問づくりサポーター", desc: "質問を考える。" }
+    ]
+  },
+  {
+    id: "reflect",
+    num: 8,
+    icon: "🌱",
+    title: "今日の学びをふり返る",
+    teacherWord: "省察",
+    description: "次につながるふり返りをしよう",
+    thinking: [
+      "今日できるようになったことは？",
+      "友達の考えでなるほどと思ったことは？",
+      "次に調べたいことは？"
+    ],
+    hints: [
+      "「できた」「楽しかった」だけで終わらせず、何ができるようになったか書こう。",
+      "友達からのまなびを書くと、次に生かせるよ。",
+      "今日の実験で「もう一度やるなら〇〇」と思うことは何かな?",
+      "次の問いをもつと、勉強が続くよ。"
+    ],
+    frames: [
+      "今日、わたしは〇〇ができるようになりました。",
+      "友達の考えで、〇〇がなるほどと思いました。",
+      "次に調べたいことは、〇〇です。",
+      "次に実験するときは、〇〇に気をつけたいです。"
+    ],
+    tools: [
+      { name: "ふり返りメタ認知ツール", desc: "学び方をふり返る。" },
+      { name: "次の問いメーカー", desc: "次に調べたいことを作る。" },
+      { name: "自己評価カード", desc: "自分の学びを評価。" },
+      { name: "友達から学んだことカード", desc: "友達からの学びを残す。" }
+    ]
+  }
+];
+
+/* ============================================
+   状態管理 (LocalStorage)
+   ============================================ */
+const STORAGE_KEY = "rika-navi-v1";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    return Object.assign(defaultState(), JSON.parse(raw));
+  } catch(e) {
+    return defaultState();
+  }
+}
+
+function defaultState() {
+  return {
+    unit: "ものの燃え方",
+    question: "ものが燃え続けるには、何が必要なのだろうか？",
+    statuses: {},        // {stepId: "todo"|"in-progress"|"done"}
+    frameAnswers: {}     // {stepId: ["text1","text2",...]}
+  };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+
+/* ============================================
+   レンダリング
+   ============================================ */
+function renderToday() {
+  document.getElementById("todayUnit").textContent = state.unit || "(未設定)";
+  document.getElementById("todayQuestion").textContent = state.question || "(未設定)";
+}
+
+function renderProgressBar() {
+  const bar = document.getElementById("progressBar");
+  bar.innerHTML = "";
+  STEPS.forEach(s => {
+    const dot = document.createElement("div");
+    const status = state.statuses[s.id] || "todo";
+    dot.className = "progress-dot " + status;
+    dot.textContent = s.num;
+    dot.title = s.title;
+    dot.style.cursor = "pointer";
+    dot.addEventListener("click", () => openDetail(s.id));
+    bar.appendChild(dot);
+  });
+}
+
+function renderSteps() {
+  const grid = document.getElementById("stepsGrid");
+  grid.innerHTML = "";
+  STEPS.forEach(s => {
+    const status = state.statuses[s.id] || "todo";
+    const card = document.createElement("div");
+    card.className = "step-card";
+    card.setAttribute("data-step", s.num);
+    card.innerHTML = `
+      <div class="step-number">${s.num}</div>
+      ${status !== "todo" ? `<div class="step-status ${status}">${status === "in-progress" ? "とりくみ中" : "おわった"}</div>` : ""}
+      <span class="step-icon">${s.icon}</span>
+      <div class="step-title">${s.title}</div>
+      <div class="step-desc">${s.description}</div>
+    `;
+    card.addEventListener("click", () => openDetail(s.id));
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================
+   詳細パネル
+   ============================================ */
+const overlay = document.getElementById("detailOverlay");
+const panel = document.getElementById("detailPanel");
+
+function openDetail(stepId) {
+  const step = STEPS.find(s => s.id === stepId);
+  if (!step) return;
+
+  const status = state.statuses[stepId] || "todo";
+  const colorVar = `var(--c${step.num})`;
+  panel.style.setProperty("--panel-color", colorVar);
+
+  const frameAnswers = state.frameAnswers[stepId] || [];
+
+  panel.innerHTML = `
+    <button class="close-btn" id="closeDetailBtn">✕</button>
+    <div class="detail-header" style="background:${colorVar}">
+      <div class="detail-header-row">
+        <div class="detail-icon">${step.icon}</div>
+        <div>
+          <div class="detail-step-num">STEP ${step.num}</div>
+          <div class="detail-title">${step.title}</div>
+          <div class="detail-teacher-word">先生のことば: ${step.teacherWord}</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-body">
+
+      <div class="status-switcher" data-step-id="${stepId}">
+        <button class="status-btn ${status==='todo'?'active':''}" data-status="todo">未着手</button>
+        <button class="status-btn ${status==='in-progress'?'active':''}" data-status="in-progress">とりくみ中</button>
+        <button class="status-btn ${status==='done'?'active':''}" data-status="done">おわった</button>
+      </div>
+
+      ${step.factCheck ? renderFactCheck(step) : ""}
+
+      <div class="block">
+        <div class="block-title"><span class="block-emoji">🤔</span> いま考えること</div>
+        <ul class="thinking-list">
+          ${step.thinking.map(t => `<li>${escapeHTML(t)}</li>`).join("")}
+        </ul>
+      </div>
+
+      <div class="block">
+        <div class="block-title"><span class="block-emoji">💡</span> 困ったときのヒント</div>
+        <ul class="hint-list">
+          ${step.hints.map(h => `<li>${escapeHTML(h)}</li>`).join("")}
+        </ul>
+      </div>
+
+      <div class="block">
+        <div class="block-title"><span class="block-emoji">✏️</span> 書き方の例 (入力して保存できるよ)</div>
+        <div class="frame-list">
+          ${step.frames.map((f, i) => `
+            <div class="frame-item">
+              <div class="frame-template">${escapeHTML(f)}</div>
+              <textarea class="frame-input" data-step-id="${stepId}" data-frame-idx="${i}" placeholder="ここに自分のことばで書こう…">${escapeHTML(frameAnswers[i] || "")}</textarea>
+            </div>
+          `).join("")}
+        </div>
+        <div class="frame-actions">
+          <button class="btn" id="resetFramesBtn">クリア</button>
+          <button class="btn btn-copy" id="copyFramesBtn">📋 まとめてコピー</button>
+          <button class="btn btn-primary" id="saveFramesBtn">💾 保存</button>
+        </div>
+        <div class="save-notice" id="saveNotice"></div>
+      </div>
+
+      <div class="block">
+        <div class="block-title"><span class="block-emoji">🧰</span> 使えるツール</div>
+        <div class="tool-list">
+          ${step.tools.map(t => {
+            const ready = !!t.url;
+            const inner = `
+              <span class="tool-status" style="${ready ? 'background: var(--c5); color: white;' : ''}">${ready ? '使う ▶' : '準備中'}</span>
+              <div class="tool-name">${escapeHTML(t.name)}</div>
+              <div class="tool-desc">${escapeHTML(t.desc)}</div>
+            `;
+            return ready
+              ? `<a href="${escapeHTML(t.url)}" class="tool-card" style="text-decoration:none;color:inherit;display:block;cursor:pointer;" target="_blank">${inner}</a>`
+              : `<div class="tool-card">${inner}</div>`;
+          }).join("")}
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  // イベント登録
+  panel.querySelector("#closeDetailBtn").addEventListener("click", closeDetail);
+
+  panel.querySelectorAll(".status-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const newStatus = btn.dataset.status;
+      state.statuses[stepId] = newStatus;
+      saveState();
+      panel.querySelectorAll(".status-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderProgressBar();
+      renderSteps();
+      toast(newStatus === "done" ? "🎉 おわった！" : newStatus === "in-progress" ? "🚀 とりくみ中にしたよ" : "未着手にもどしたよ");
+    });
+  });
+
+  panel.querySelector("#saveFramesBtn").addEventListener("click", () => {
+    const inputs = panel.querySelectorAll(".frame-input");
+    const arr = [];
+    inputs.forEach(inp => arr.push(inp.value));
+    state.frameAnswers[stepId] = arr;
+    saveState();
+    document.getElementById("saveNotice").textContent = "✓ 保存しました";
+    setTimeout(() => { document.getElementById("saveNotice").textContent = ""; }, 2000);
+  });
+
+  panel.querySelector("#resetFramesBtn").addEventListener("click", () => {
+    if (!confirm("入力をクリアしますか？")) return;
+    panel.querySelectorAll(".frame-input").forEach(inp => inp.value = "");
+  });
+
+  panel.querySelector("#copyFramesBtn").addEventListener("click", () => {
+    const inputs = panel.querySelectorAll(".frame-input");
+    const templates = step.frames;
+    const lines = [];
+    inputs.forEach((inp, i) => {
+      const text = inp.value.trim();
+      if (text) lines.push(text);
+      else lines.push(templates[i]);
+    });
+    const result = `【${step.title}】\n${lines.join("\n")}`;
+    navigator.clipboard.writeText(result).then(() => {
+      toast("📋 コピーしたよ!");
+    }).catch(() => {
+      toast("コピーできませんでした");
+    });
+  });
+
+  // factCheck機能の登録
+  if (step.factCheck) {
+    panel.querySelectorAll(".fact-quiz").forEach((quizEl, idx) => {
+      const quiz = step.factCheckQuiz[idx];
+      quizEl.querySelectorAll(".fact-btn").forEach(b => {
+        b.addEventListener("click", () => {
+          const chose = b.dataset.choice;
+          const fb = quizEl.querySelector(".fact-feedback");
+          if (chose === quiz.answer) {
+            fb.className = "fact-feedback correct";
+            fb.textContent = "⭕ せいかい! " + quiz.explainOK;
+          } else {
+            fb.className = "fact-feedback wrong";
+            fb.textContent = "💡 もう一度! " + quiz.explainNG;
+          }
+        });
+      });
+    });
+  }
+
+  overlay.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function renderFactCheck(step) {
+  return `
+    <div class="fact-check">
+      <div class="fact-check-title">🔎 けっか？ それとも 考察？</div>
+      <div class="fact-check-desc">${escapeHTML(step.factCheckIntro)}</div>
+      ${step.factCheckQuiz.map((q, i) => `
+        <div class="fact-quiz">
+          <div class="fact-quiz-text">${escapeHTML(q.text)}</div>
+          <div class="fact-buttons">
+            <button class="fact-btn fact" data-choice="fact">これは 結果</button>
+            <button class="fact-btn opinion" data-choice="opinion">これは 考察</button>
+          </div>
+          <div class="fact-feedback"></div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function closeDetail() {
+  overlay.classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+overlay.addEventListener("click", (e) => {
+  if (e.target === overlay) closeDetail();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && overlay.classList.contains("active")) closeDetail();
+});
+
+/* ============================================
+   教師用モーダル
+   ============================================ */
+const teacherModal = document.getElementById("teacherModal");
+
+document.getElementById("editTodayBtn").addEventListener("click", () => {
+  document.getElementById("unitInput").value = state.unit;
+  document.getElementById("questionInput").value = state.question;
+  teacherModal.classList.add("active");
+});
+
+document.getElementById("teacherCancelBtn").addEventListener("click", () => {
+  teacherModal.classList.remove("active");
+});
+
+document.getElementById("teacherSaveBtn").addEventListener("click", () => {
+  state.unit = document.getElementById("unitInput").value.trim() || "(未設定)";
+  state.question = document.getElementById("questionInput").value.trim() || "(未設定)";
+  saveState();
+  renderToday();
+  teacherModal.classList.remove("active");
+  toast("💾 保存しました");
+});
+
+document.getElementById("resetProgressBtn").addEventListener("click", () => {
+  if (!confirm("すべてのステップを「未着手」に戻しますか？\n(書いた文は消えません)")) return;
+  state.statuses = {};
+  saveState();
+  renderProgressBar();
+  renderSteps();
+  toast("🔄 進捗をリセットしました");
+});
+
+teacherModal.addEventListener("click", e => {
+  if (e.target === teacherModal) teacherModal.classList.remove("active");
+});
+
+/* ============================================
+   ユーティリティ
+   ============================================ */
+function escapeHTML(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+/* ============================================
+   初期化
+   ============================================ */
+renderToday();
+renderProgressBar();
+renderSteps();
+
+</script>
+
+</body>
+</html>
