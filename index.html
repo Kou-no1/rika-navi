@@ -940,6 +940,10 @@ footer {
   <section class="today-board">
     <button class="today-edit-btn" id="editTodayBtn">✏️ 教師用</button>
     <div class="today-label">きょうの学習</div>
+    <div class="field-row" id="classRow" style="display:none;">
+      <div class="field-label">クラス</div>
+      <div class="field-value" id="todayClass"></div>
+    </div>
     <div class="field-row">
       <div class="field-label">単元</div>
       <div class="field-value" id="todayUnit">ものの燃え方</div>
@@ -971,24 +975,83 @@ footer {
 
 <!-- 教師用モーダル -->
 <div class="teacher-modal" id="teacherModal">
-  <div class="teacher-modal-inner">
+  <div class="teacher-modal-inner" style="max-width:560px;">
     <div class="teacher-modal-title">👩‍🏫 教師用 設定</div>
-    <div class="teacher-form-row">
-      <label for="unitInput">単元名</label>
-      <input type="text" id="unitInput">
+
+    <!-- タブ -->
+    <div style="display:flex;gap:0;border:2.5px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px;">
+      <button class="teacher-tab active" data-tab="setting" style="flex:1;padding:8px;border:none;background:var(--accent);font-family:var(--font-body);font-weight:700;font-size:13px;cursor:pointer;">⚙️ 設定</button>
+      <button class="teacher-tab" data-tab="url" style="flex:1;padding:8px;border:none;border-left:2px solid var(--line);background:var(--bg-paper);font-family:var(--font-body);font-weight:700;font-size:13px;cursor:pointer;">🔗 URL作成</button>
+      <button class="teacher-tab" data-tab="history" style="flex:1;padding:8px;border:none;border-left:2px solid var(--line);background:var(--bg-paper);font-family:var(--font-body);font-weight:700;font-size:13px;cursor:pointer;">📋 履歴</button>
     </div>
-    <div class="teacher-form-row">
-      <label for="questionInput">今日の問題</label>
-      <textarea id="questionInput"></textarea>
+
+    <!-- 設定タブ -->
+    <div id="tab-setting">
+      <div class="teacher-form-row">
+        <label for="classInput">クラス名</label>
+        <input type="text" id="classInput" placeholder="例：5年1組">
+      </div>
+      <div class="teacher-form-row">
+        <label for="unitInput">単元名</label>
+        <input type="text" id="unitInput" placeholder="例：ものの燃え方">
+      </div>
+      <div class="teacher-form-row">
+        <label for="questionInput">今日の問題</label>
+        <textarea id="questionInput" placeholder="例：ものが燃え続けるには、何が必要なのだろうか？"></textarea>
+      </div>
+      <div class="teacher-form-actions">
+        <button class="btn" id="teacherCancelBtn">キャンセル</button>
+        <button class="btn btn-primary" id="teacherSaveBtn">💾 保存</button>
+      </div>
     </div>
-    <div class="teacher-form-row">
-      <label>進捗のリセット</label>
-      <button class="reset-progress-btn" id="resetProgressBtn">🔄 すべてのステップを未着手に戻す</button>
+
+    <!-- URL作成タブ -->
+    <div id="tab-url" style="display:none;">
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px;">
+        設定した内容をURLに埋め込んで、児童に配布しよう。<br>
+        Google ClassroomやロイロノートでQRコードを見せるだけでOK。
+      </div>
+      <div class="teacher-form-row">
+        <label>クラス</label>
+        <input type="text" id="urlClassInput" placeholder="例：5年1組">
+      </div>
+      <div class="teacher-form-row">
+        <label>単元名</label>
+        <input type="text" id="urlUnitInput" placeholder="例：ものの燃え方">
+      </div>
+      <div class="teacher-form-row">
+        <label>今日の問題</label>
+        <textarea id="urlQuestionInput" placeholder="例：ものが燃え続けるには、何が必要なのだろうか？" style="min-height:60px;"></textarea>
+      </div>
+
+      <div style="background:var(--muted-bg);border:2px solid var(--muted);border-radius:10px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">生成されたURL</div>
+        <div id="generatedUrl" style="font-size:11px;word-break:break-all;color:var(--c6);font-weight:700;min-height:2em;"></div>
+      </div>
+
+      <!-- QRコード表示エリア -->
+      <div id="qrArea" style="text-align:center;margin-bottom:12px;display:none;">
+        <canvas id="qrCanvas" style="border:3px solid var(--line);border-radius:10px;box-shadow:var(--shadow-sm);"></canvas>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">このQRコードを電子黒板に映そう</div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="generateUrlBtn">🔗 URL生成</button>
+        <button class="btn btn-copy" id="copyUrlBtn" style="display:none;">📋 URLコピー</button>
+        <button class="btn btn-strong" id="showQrBtn" style="display:none;">📱 QR表示</button>
+        <button class="btn" id="saveToHistoryBtn" style="display:none;">📋 履歴に保存</button>
+      </div>
     </div>
-    <div class="teacher-form-actions">
-      <button class="btn" id="teacherCancelBtn">キャンセル</button>
-      <button class="btn btn-primary" id="teacherSaveBtn">保存</button>
+
+    <!-- 履歴タブ -->
+    <div id="tab-history" style="display:none;">
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">過去に作ったURLの履歴。タップするとすぐ使えるよ。</div>
+      <div id="historyList"></div>
+      <div style="text-align:right;margin-top:8px;">
+        <button class="btn btn-small btn-danger" id="clearHistoryBtn" style="font-size:11px;">🗑️ 履歴をクリア</button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -1266,38 +1329,128 @@ const STEPS = [
 
 /* ============================================
    状態管理 (LocalStorage)
+   単元ごとに別キーで保存する設計
+   キー: rika-navi-v2-{unit}
+   最後に使った単元: rika-navi-last-unit
    ============================================ */
-const STORAGE_KEY = "rika-navi-v1";
+const STORAGE_PREFIX  = "rika-navi-v2-";
+const LAST_UNIT_KEY   = "rika-navi-last-unit";
+const LAST_CLASS_KEY  = "rika-navi-last-class";
 
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    return Object.assign(defaultState(), JSON.parse(raw));
-  } catch(e) {
-    return defaultState();
-  }
+// 単元名 → ストレージキー（記号・スペースを除去して安全なキーに）
+function unitToKey(unit) {
+  return STORAGE_PREFIX + (unit || "default").replace(/\s/g, "_");
 }
 
-function defaultState() {
+function defaultState(unit, className) {
   return {
-    unit: "ものの燃え方",
-    question: "ものが燃え続けるには、何が必要なのだろうか？",
-    statuses: {},        // {stepId: "todo"|"in-progress"|"done"}
-    frameAnswers: {}     // {stepId: ["text1","text2",...]}
+    className: className || "",
+    unit:      unit      || "ものの燃え方",
+    question:  "",
+    statuses:  {},
+    frameAnswers: {}
   };
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+// 指定した単元のデータを読み込む
+function loadStateForUnit(unit, className) {
+  try {
+    const raw = localStorage.getItem(unitToKey(unit));
+    if (!raw) return defaultState(unit, className);
+    const saved = JSON.parse(raw);
+    // classNameは「最後に使ったクラス」で上書き（単元をまたいで継続）
+    saved.className = className || saved.className || "";
+    return saved;
+  } catch(e) {
+    return defaultState(unit, className);
+  }
 }
 
-let state = loadState();
+// 現在のstateを保存（単元キーで保存 + 最後の単元・クラスも記録）
+function saveState() {
+  localStorage.setItem(unitToKey(state.unit), JSON.stringify(state));
+  localStorage.setItem(LAST_UNIT_KEY,  state.unit      || "");
+  localStorage.setItem(LAST_CLASS_KEY, state.className || "");
+}
+
+// 起動時：最後に使った単元を復元
+function loadInitialState() {
+  const lastUnit  = localStorage.getItem(LAST_UNIT_KEY)  || "ものの燃え方";
+  const lastClass = localStorage.getItem(LAST_CLASS_KEY) || "";
+  return loadStateForUnit(lastUnit, lastClass);
+}
+
+// 単元を切り替える（stateを新しい単元のデータで入れ替える）
+function switchUnit(newUnit, newClass) {
+  state = loadStateForUnit(newUnit, newClass || state.className);
+  state.unit      = newUnit;
+  if (newClass) state.className = newClass;
+  saveState();
+}
+
+let state = loadInitialState();
+
+/* ============================================
+   URLパラメータ処理
+   ?class=5年1組&unit=ものの燃え方&q=問題文
+   パラメータが来たとき：
+     - 単元が今と違う → その単元のデータに切り替え
+     - 同じ単元 → classとquestionだけ更新
+   ============================================ */
+function applyUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const cls  = params.get("class") || params.get("c")        || null;
+  const unit = params.get("unit")  || params.get("u")        || null;
+  const q    = params.get("q")     || params.get("question") || null;
+
+  // パラメータが何もなければ何もしない（自学モード：最後の状態のまま）
+  if (!cls && !unit && !q) return;
+
+  // 単元が変わっていたら、その単元のデータに切り替える
+  if (unit && unit !== state.unit) {
+    switchUnit(unit, cls);
+  } else {
+    // 同じ単元内でclassやquestionだけ更新
+    if (cls) state.className = cls;
+  }
+
+  // 問題文はURLパラメータを優先して上書き
+  if (q) state.question = q;
+  if (cls) state.className = cls;
+
+  saveState();
+}
+applyUrlParams();
+
+/* ============================================
+   単元一覧取得（履歴タブで使用）
+   ============================================ */
+function listSavedUnits() {
+  const units = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(STORAGE_PREFIX)) {
+      try {
+        const data = JSON.parse(localStorage.getItem(k));
+        if (data && data.unit) units.push(data);
+      } catch(e) {}
+    }
+  }
+  return units.sort((a, b) => (a.unit > b.unit ? 1 : -1));
+}
 
 /* ============================================
    レンダリング
    ============================================ */
 function renderToday() {
+  const classRow = document.getElementById("classRow");
+  const todayClass = document.getElementById("todayClass");
+  if (state.className) {
+    todayClass.textContent = state.className;
+    classRow.style.display = "grid";
+  } else {
+    classRow.style.display = "none";
+  }
   document.getElementById("todayUnit").textContent = state.unit || "(未設定)";
   document.getElementById("todayQuestion").textContent = state.question || "(未設定)";
 }
@@ -1535,37 +1688,282 @@ document.addEventListener("keydown", e => {
    教師用モーダル
    ============================================ */
 const teacherModal = document.getElementById("teacherModal");
+const HISTORY_KEY = "rika-navi-url-history";
 
+// タブ切り替え
+document.querySelectorAll(".teacher-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".teacher-tab").forEach(t => {
+      t.style.background = "var(--bg-paper)";
+      t.classList.remove("active");
+    });
+    tab.style.background = "var(--accent)";
+    tab.classList.add("active");
+    ["setting","url","history"].forEach(id => {
+      document.getElementById(`tab-${id}`).style.display = "none";
+    });
+    document.getElementById(`tab-${tab.dataset.tab}`).style.display = "block";
+    if (tab.dataset.tab === "history") renderHistory();
+    if (tab.dataset.tab === "url") syncUrlInputs();
+  });
+});
+
+// 教師用ボタンを押したとき、現在の設定を各タブに反映
 document.getElementById("editTodayBtn").addEventListener("click", () => {
-  document.getElementById("unitInput").value = state.unit;
-  document.getElementById("questionInput").value = state.question;
+  document.getElementById("classInput").value   = state.className || "";
+  document.getElementById("unitInput").value    = state.unit || "";
+  document.getElementById("questionInput").value = state.question || "";
+  syncUrlInputs();
   teacherModal.classList.add("active");
 });
+
+function syncUrlInputs() {
+  document.getElementById("urlClassInput").value    = state.className || "";
+  document.getElementById("urlUnitInput").value     = state.unit || "";
+  document.getElementById("urlQuestionInput").value = state.question || "";
+  document.getElementById("generatedUrl").textContent = "";
+  document.getElementById("qrArea").style.display = "none";
+  document.getElementById("copyUrlBtn").style.display = "none";
+  document.getElementById("showQrBtn").style.display = "none";
+  document.getElementById("saveToHistoryBtn").style.display = "none";
+}
 
 document.getElementById("teacherCancelBtn").addEventListener("click", () => {
   teacherModal.classList.remove("active");
 });
 
 document.getElementById("teacherSaveBtn").addEventListener("click", () => {
-  state.unit = document.getElementById("unitInput").value.trim() || "(未設定)";
-  state.question = document.getElementById("questionInput").value.trim() || "(未設定)";
+  const newClass = document.getElementById("classInput").value.trim();
+  const newUnit  = document.getElementById("unitInput").value.trim() || state.unit;
+  const newQ     = document.getElementById("questionInput").value.trim() || "(未設定)";
+
+  // 単元が変わっていたら切り替え、同じなら上書き
+  if (newUnit !== state.unit) {
+    switchUnit(newUnit, newClass);
+    state.question = newQ;
+  } else {
+    state.className = newClass;
+    state.unit      = newUnit;
+    state.question  = newQ;
+  }
   saveState();
   renderToday();
   teacherModal.classList.remove("active");
   toast("💾 保存しました");
 });
 
-document.getElementById("resetProgressBtn").addEventListener("click", () => {
-  if (!confirm("すべてのステップを「未着手」に戻しますか？\n(書いた文は消えません)")) return;
-  state.statuses = {};
-  saveState();
-  renderProgressBar();
-  renderSteps();
-  toast("🔄 進捗をリセットしました");
-});
-
 teacherModal.addEventListener("click", e => {
   if (e.target === teacherModal) teacherModal.classList.remove("active");
+});
+
+/* ---- URL生成 ---- */
+function buildUrl(cls, unit, q) {
+  const base = window.location.origin + window.location.pathname;
+  const p = new URLSearchParams();
+  if (cls)  p.set("class", cls);
+  if (unit) p.set("unit",  unit);
+  if (q)    p.set("q",     q);
+  return `${base}?${p.toString()}`;
+}
+
+let currentGeneratedUrl = "";
+
+document.getElementById("generateUrlBtn").addEventListener("click", () => {
+  const cls  = document.getElementById("urlClassInput").value.trim();
+  const unit = document.getElementById("urlUnitInput").value.trim();
+  const q    = document.getElementById("urlQuestionInput").value.trim();
+  if (!unit && !q) { toast("単元名か問題を入力してね"); return; }
+
+  currentGeneratedUrl = buildUrl(cls, unit, q);
+  document.getElementById("generatedUrl").textContent = currentGeneratedUrl;
+  document.getElementById("copyUrlBtn").style.display   = "inline-flex";
+  document.getElementById("showQrBtn").style.display    = "inline-flex";
+  document.getElementById("saveToHistoryBtn").style.display = "inline-flex";
+  document.getElementById("qrArea").style.display = "none";
+  toast("🔗 URLを生成したよ！");
+});
+
+document.getElementById("copyUrlBtn").addEventListener("click", () => {
+  navigator.clipboard.writeText(currentGeneratedUrl).then(() => toast("📋 URLをコピーしたよ！"));
+});
+
+/* ---- QRコード生成（ライブラリなしで自前実装・小規模URL向け） ---- */
+document.getElementById("showQrBtn").addEventListener("click", () => {
+  const area = document.getElementById("qrArea");
+  area.style.display = "block";
+  drawQR(currentGeneratedUrl);
+  toast("📱 QRコードを表示したよ！");
+});
+
+// QRコード生成（qrcode-generatorライブラリをCDNから動的ロード）
+function drawQR(url) {
+  const canvas = document.getElementById("qrCanvas");
+  // qrcode-generator を動的に読み込み
+  if (window.qrcode) {
+    _renderQR(url, canvas);
+    return;
+  }
+  const script = document.createElement("script");
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+  script.onload = () => {
+    // qrcodejsはcanvasより divを使う方式
+    const div = document.createElement("div");
+    div.id = "_qrTmp";
+    div.style.display = "none";
+    document.body.appendChild(div);
+    new QRCode(div, {
+      text: url,
+      width: 240,
+      height: 240,
+      colorDark: "#2b2b3d",
+      colorLight: "#ffffff"
+    });
+    setTimeout(() => {
+      const img = div.querySelector("img");
+      if (img) {
+        const ctx = canvas.getContext("2d");
+        canvas.width = 240; canvas.height = 240;
+        const i = new Image();
+        i.onload = () => ctx.drawImage(i, 0, 0);
+        i.src = img.src;
+      } else {
+        // canvasで直接描画されている場合
+        const qrCanvas = div.querySelector("canvas");
+        if (qrCanvas) {
+          canvas.width = qrCanvas.width;
+          canvas.height = qrCanvas.height;
+          canvas.getContext("2d").drawImage(qrCanvas, 0, 0);
+        }
+      }
+      document.body.removeChild(div);
+    }, 200);
+  };
+  script.onerror = () => {
+    // フォールバック：URLをそのままテキスト表示
+    const ctx = canvas.getContext("2d");
+    canvas.width = 300; canvas.height = 80;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, 300, 80);
+    ctx.fillStyle = "#2b2b3d";
+    ctx.font = "11px sans-serif";
+    ctx.fillText("QR生成失敗。URLをコピーして共有してください。", 8, 30);
+    toast("QRコードの生成に失敗しました。URLをコピーして使ってね。");
+  };
+  document.head.appendChild(script);
+}
+
+/* ---- 履歴 ---- */
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch(e) { return []; }
+}
+function saveHistory(h) { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+
+document.getElementById("saveToHistoryBtn").addEventListener("click", () => {
+  const cls  = document.getElementById("urlClassInput").value.trim();
+  const unit = document.getElementById("urlUnitInput").value.trim();
+  const q    = document.getElementById("urlQuestionInput").value.trim();
+  const h = loadHistory();
+  h.unshift({ cls, unit, q, url: currentGeneratedUrl, date: new Date().toLocaleDateString("ja-JP") });
+  if (h.length > 20) h.pop();
+  saveHistory(h);
+  toast("📋 履歴に保存したよ！");
+});
+
+function renderHistory() {
+  const h = loadHistory();
+  const wrap = document.getElementById("historyList");
+
+  // 保存済み単元一覧も表示
+  const savedUnits = listSavedUnits();
+  const unitHtml = savedUnits.length ? `
+    <div style="font-weight:900;font-size:13px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--muted);">
+      📚 保存済み単元（タップで切り替え）
+    </div>
+    ${savedUnits.map(u => `
+      <div style="display:flex;align-items:center;gap:8px;background:${u.unit === state.unit ? '#fff8e0' : 'white'};border:2px solid ${u.unit === state.unit ? 'var(--accent)' : 'var(--muted)'};border-radius:10px;padding:8px 10px;margin-bottom:6px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:13px;">${escapeHTML(u.className || "")} ${escapeHTML(u.unit)}</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:1px;">
+            進捗：${Object.values(u.statuses || {}).filter(s => s === "done").length}ステップ完了
+            ${u.unit === state.unit ? ' ← 今ここ' : ''}
+          </div>
+        </div>
+        <button class="btn btn-small switch-unit-btn" data-unit="${escapeHTML(u.unit)}" data-class="${escapeHTML(u.className || '')}"
+          ${u.unit === state.unit ? 'style="opacity:0.4;cursor:default;"' : ''}>
+          ${u.unit === state.unit ? '表示中' : '切替'}
+        </button>
+      </div>
+    `).join("")}
+    <div class="divider"></div>
+    <div style="font-weight:900;font-size:13px;margin-bottom:8px;margin-top:12px;">🔗 URL履歴</div>
+  ` : "";
+
+  if (!h.length && !savedUnits.length) {
+    wrap.innerHTML = '<div style="color:var(--ink-soft);text-align:center;padding:16px;font-size:13px;">まだ履歴がないよ</div>';
+    return;
+  }
+
+  wrap.innerHTML = unitHtml + (h.length ? h.map((item, i) => `
+    <div style="background:white;border:2px solid var(--muted);border-radius:10px;padding:10px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:13px;">${escapeHTML(item.cls || "")} ${escapeHTML(item.unit || "")}</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(item.q || "")}</div>
+          <div style="font-size:10px;color:var(--ink-soft);margin-top:2px;">${escapeHTML(item.date || "")}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="btn btn-small" data-i="${i}" data-action="use">使う</button>
+          <button class="btn btn-small" data-i="${i}" data-action="copy">📋</button>
+          <button class="btn btn-small btn-danger" data-i="${i}" data-action="del">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join("") : '<div style="color:var(--ink-soft);font-size:12px;text-align:center;padding:8px;">URL履歴はまだないよ</div>');
+
+  // 単元切り替えボタン
+  wrap.querySelectorAll(".switch-unit-btn").forEach(btn => {
+    if (btn.dataset.unit === state.unit) return;
+    btn.addEventListener("click", () => {
+      switchUnit(btn.dataset.unit, btn.dataset.class || "");
+      renderToday();
+      renderProgressBar();
+      renderSteps();
+      teacherModal.classList.remove("active");
+      toast(`📚 ${btn.dataset.unit} に切り替えたよ！`);
+    });
+  });
+
+  // URL履歴ボタン
+  wrap.querySelectorAll("button[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = parseInt(btn.dataset.i);
+      const item = loadHistory()[i];
+      if (btn.dataset.action === "use") {
+        switchUnit(item.unit || state.unit, item.cls || "");
+        state.question = item.q || state.question;
+        saveState();
+        renderToday();
+        renderProgressBar();
+        renderSteps();
+        teacherModal.classList.remove("active");
+        toast(`📚 ${item.cls || ""} ${item.unit || ""}を適用したよ！`);
+      } else if (btn.dataset.action === "copy") {
+        navigator.clipboard.writeText(item.url).then(() => toast("📋 URLをコピーしたよ！"));
+      } else if (btn.dataset.action === "del") {
+        const h = loadHistory();
+        h.splice(i, 1);
+        saveHistory(h);
+        renderHistory();
+      }
+    });
+  });
+}
+
+document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+  if (!confirm("履歴をすべて削除しますか？")) return;
+  saveHistory([]);
+  renderHistory();
+  toast("🗑️ 履歴を削除しました");
 });
 
 /* ============================================
