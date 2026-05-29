@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>次の問いメーカー ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.trigger-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.trigger-card {
+  background: white;
+  border: 2.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s;
+}
+.trigger-card:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-md); }
+.trigger-card.active { background: var(--c8); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+.trigger-icon { font-size: 28px; margin-bottom: 4px; }
+.trigger-name { font-weight: 900; font-size: 13px; }
+.trigger-q { font-size: 10px; margin-top: 3px; opacity: 0.85; line-height: 1.4; min-height: 2.5em; }
+
+.question-output {
+  background: linear-gradient(135deg, #fff 0%, #f0fdfa 100%);
+  border: 3px solid var(--c8);
+  border-radius: 14px;
+  padding: 16px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.8;
+  min-height: 70px;
+  box-shadow: var(--shadow-sm);
+}
+
+.saved-questions { display: flex; flex-direction: column; gap: 8px; }
+.saved-q-item {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.saved-q-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: var(--c8);
+  color: white;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.saved-q-item textarea {
+  flex: 1;
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  padding: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  min-height: 44px;
+}
+</style>
+</head>
+<body data-step="8" data-tool-id="next-question" data-tool-title="次の問いメーカー" data-step-name="今日の学びをふり返る">
+
+<main>
+  <div class="tool-intro">
+    今日の学習から<strong>次に調べたい問い</strong>を作ろう。<br>
+    「もし〜だったら？」「なぜ〜？」という問いが、次の学びにつながるよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🌱</span> 問いのタネを選ぼう</div>
+    <div class="section-subtitle">どんなきっかけから新しい問いが生まれた？</div>
+    <div class="trigger-grid" id="triggerGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">✍️</span> 書き始めのことばを使おう</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;" id="starterChips"></div>
+    <textarea id="questionInput" style="min-height:70px;" placeholder="次に調べたいことを書こう"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-strong" id="addBtn">＋ この問いを保存</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💭</span> 今日の結果から取り込む</div>
+    <button class="btn btn-small" id="importBtn" style="margin-bottom:8px;">📥 考察ビルダーの「まとめ」から取り込む</button>
+    <div id="importArea" style="font-size:12px;color:var(--ink-soft);"></div>
+  </div>
+
+  <div class="section" id="savedSection">
+    <div class="section-title"><span class="emoji">📋</span> 保存した問い</div>
+    <div class="saved-questions" id="savedList">
+      <div style="color:var(--ink-soft);text-align:center;padding:12px;font-size:13px;">まだ問いがないよ</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 全部コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>よい「次の問い」のコツ</strong>：①今日の結果から広げる ②「もし〜なら？」「〜と〜はどうちがう？」 ③自分が本当に知りたいこと
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "next-question";
+const TRIGGERS = [
+  { id: "unexpected", icon: "😮", name: "予想とちがった", q: "予想とちがったことから考えた問い" },
+  { id: "extend",     icon: "🔭", name: "もっと調べたい", q: "結果をもっとくわしく調べたい" },
+  { id: "ifthen",     icon: "🤔", name: "もし〜だったら", q: "条件を変えたらどうなるか" },
+  { id: "daily",      icon: "🏠", name: "生活とつながった", q: "生活の中で同じことが起きている" },
+  { id: "friend",     icon: "👥", name: "友達の考えから", q: "友達の発表から気になったこと" },
+  { id: "unsolved",   icon: "❓", name: "解決しなかった", q: "今日の実験では解決できなかった疑問" }
+];
+
+const STARTERS_BY_TRIGGER = {
+  unexpected: ["予想とちがったのはなぜか調べたい。", "もし〜を変えたら、予想通りになるのか確かめたい。"],
+  extend:     ["〜をもっとくわしく調べると、どうなるのだろうか？", "〜の量を変えると、結果はどう変わるのだろうか？"],
+  ifthen:     ["もし〜を2倍にしたら、どうなるのだろうか？", "もし温度を変えたら、〜はどう変わるのだろうか？"],
+  daily:      ["生活の中で〜と同じことが起きているのはなぜか調べたい。", "〜は日常のどんな場面で使われているのだろうか？"],
+  friend:     ["友達の考えを聞いて、〜についてもっと調べたいと思った。", "友達の結果と自分の結果でちがいがあったのはなぜか調べたい。"],
+  unsolved:   ["今日の実験では〜が分からなかったので、次に調べたい。", "〜についてはまだ疑問が残っている。"]
+};
+
+const DEFAULT = { currentTrigger: "unexpected", questions: [] };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.questions)) state.questions = [];
+
+function renderTriggers() {
+  document.getElementById("triggerGrid").innerHTML = TRIGGERS.map(t => `
+    <div class="trigger-card ${state.currentTrigger === t.id ? 'active' : ''}" data-id="${t.id}">
+      <div class="trigger-icon">${t.icon}</div>
+      <div class="trigger-name">${t.name}</div>
+      <div class="trigger-q">${t.q}</div>
+    </div>
+  `).join("");
+  document.querySelectorAll(".trigger-card").forEach(c => {
+    c.addEventListener("click", () => {
+      state.currentTrigger = c.dataset.id;
+      renderTriggers();
+      renderStarters();
+    });
+  });
+}
+
+function renderStarters() {
+  const starters = STARTERS_BY_TRIGGER[state.currentTrigger] || [];
+  document.getElementById("starterChips").innerHTML = starters.map(s => `
+    <button class="starter-chip" data-s="${RikaNavi.escapeHTML(s)}"
+      style="background:var(--bg);border:2px solid var(--muted);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);">${s}</button>
+  `).join("");
+  document.querySelectorAll(".starter-chip").forEach(c => {
+    c.addEventListener("click", () => {
+      const ta = document.getElementById("questionInput");
+      ta.value = c.dataset.s;
+      ta.focus();
+    });
+  });
+}
+
+document.getElementById("addBtn").addEventListener("click", () => {
+  const text = document.getElementById("questionInput").value.trim();
+  if (!text) { RikaNavi.toast("問いを書いてね"); return; }
+  const trigger = TRIGGERS.find(t => t.id === state.currentTrigger);
+  state.questions.push({ id: Date.now(), trigger: state.currentTrigger, triggerLabel: trigger?.name || "", text });
+  document.getElementById("questionInput").value = "";
+  RikaNavi.save(TOOL_ID, state);
+  renderSaved();
+  RikaNavi.toast("💡 問いを追加したよ！");
+});
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  const cb = RikaNavi.load("consideration-builder", { summaryText: "" });
+  if (!cb.summaryText) { RikaNavi.toast("考察ビルダーにまとめがないよ"); return; }
+  document.getElementById("questionInput").value = `${cb.summaryText}から考えると、次に〜を調べたい。`;
+  document.getElementById("importArea").textContent = `📥 取り込んだまとめ：${cb.summaryText.slice(0, 50)}…`;
+  RikaNavi.toast("📥 考察のまとめを取り込んだよ！");
+});
+
+function renderSaved() {
+  const wrap = document.getElementById("savedList");
+  if (!state.questions.length) {
+    wrap.innerHTML = '<div style="color:var(--ink-soft);text-align:center;padding:12px;font-size:13px;">まだ問いがないよ</div>';
+    return;
+  }
+  wrap.innerHTML = state.questions.map((q, i) => `
+    <div class="saved-q-item">
+      <span class="saved-q-badge">${RikaNavi.escapeHTML(q.triggerLabel || "")}</span>
+      <textarea data-i="${i}">${RikaNavi.escapeHTML(q.text)}</textarea>
+      <button data-i="${i}" style="border:2px solid var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;cursor:pointer;font-weight:900;font-size:11px;flex-shrink:0;">✕</button>
+    </div>
+  `).join("");
+  wrap.querySelectorAll("textarea").forEach(ta => {
+    ta.addEventListener("input", () => { state.questions[parseInt(ta.dataset.i)].text = ta.value; });
+  });
+  wrap.querySelectorAll("button[data-i]").forEach(b => {
+    b.addEventListener("click", () => {
+      state.questions.splice(parseInt(b.dataset.i), 1);
+      RikaNavi.save(TOOL_ID, state);
+      renderSaved();
+    });
+  });
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の問いを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  if (!state.questions.length) { RikaNavi.toast("問いがないよ"); return; }
+  const lines = ["【次の問い】"];
+  state.questions.forEach((q, i) => lines.push(`Q${i+1}（${q.triggerLabel}）：${q.text}`));
+  RikaNavi.copy(lines.join("\n"));
+});
+
+renderTriggers();
+renderStarters();
+renderSaved();
+</script>
+</body>
+</html>

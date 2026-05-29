@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自己評価カード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.eval-perspective {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.ep-title { font-weight: 900; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.ep-desc { font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; }
+.level-btns { display: flex; gap: 6px; }
+.level-btn {
+  flex: 1;
+  padding: 10px 4px;
+  border: 2.5px solid var(--muted);
+  border-radius: 10px;
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s;
+  line-height: 1.3;
+}
+.level-btn:hover { border-color: var(--line); }
+.level-btn.lv3 { border-color: var(--c5); }
+.level-btn.lv2 { border-color: var(--c3); }
+.level-btn.lv1 { border-color: var(--c4); }
+.level-btn.selected.lv3 { background: var(--c5); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); box-shadow: var(--shadow-sm); }
+.level-btn.selected.lv2 { background: var(--c3); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); box-shadow: var(--shadow-sm); }
+.level-btn.selected.lv1 { background: var(--c4); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); box-shadow: var(--shadow-sm); }
+.ep-comment { margin-top: 8px; }
+.ep-comment textarea {
+  width: 100%; border: 1.5px solid var(--muted); border-radius: 6px;
+  padding: 6px 8px; font-family: var(--font-body); font-size: 12px; min-height: 44px;
+}
+
+.result-card {
+  background: linear-gradient(135deg, #fff 0%, #f0fdfa 100%);
+  border: 3px solid var(--c8);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow-md);
+}
+.result-title { font-family: var(--font-display); font-weight: 900; font-size: 15px; color: var(--c8); margin-bottom: 12px; }
+.result-bars { display: flex; flex-direction: column; gap: 6px; }
+.result-bar-row { display: flex; align-items: center; gap: 8px; }
+.result-bar-label { font-size: 12px; font-weight: 700; min-width: 90px; }
+.result-bar-track { flex: 1; height: 12px; background: var(--muted-bg); border: 2px solid var(--muted); border-radius: 8px; overflow: hidden; }
+.result-bar-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
+.result-bar-score { font-size: 12px; font-weight: 900; min-width: 24px; text-align: right; }
+
+.teacher-comment-box {
+  background: #fffce8;
+  border: 2.5px dashed var(--accent);
+  border-radius: 12px;
+  padding: 14px;
+}
+.teacher-comment-title { font-weight: 900; font-size: 14px; margin-bottom: 6px; color: var(--warn); }
+</style>
+</head>
+<body data-step="8" data-tool-id="self-eval" data-tool-title="自己評価カード" data-step-name="今日の学びをふり返る">
+
+<main>
+  <div class="tool-intro">
+    今日の学習を<strong>4つの観点</strong>で振り返ろう。<br>
+    正直に、自分をよく見つめて評価しよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📋</span> 4つの観点で自己評価</div>
+    <div id="perspectiveList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📊</span> 評価の結果</div>
+    <div class="result-card">
+      <div class="result-title">📊 今日の学びレーダー</div>
+      <div class="result-bars" id="resultBars"></div>
+      <div id="overallMsg" style="margin-top:12px;font-size:13px;font-weight:700;text-align:center;padding:8px;background:var(--muted-bg);border-radius:8px;"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💬</span> 全体のコメント</div>
+    <div class="field-help">評価全体を通して、自分へのメッセージを書こう</div>
+    <textarea id="overallComment" style="min-height:70px;" placeholder="例：今日は考察をしっかり書けた。次は発表をもっと大きな声でやりたい。"></textarea>
+  </div>
+
+  <div class="section">
+    <div class="teacher-comment-box">
+      <div class="teacher-comment-title">✏️ 先生からのコメント（先生が書く欄）</div>
+      <textarea id="teacherComment" style="min-height:70px;background:white;" placeholder="先生からのコメントを書く欄です。"></textarea>
+    </div>
+  </div>
+
+  <div class="btn-row" style="padding: 0 0 16px;">
+    <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+    <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+    <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+  </div>
+  <div class="save-indicator" id="saveIndicator"></div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "self-eval";
+const PERSPECTIVES = [
+  {
+    id: "knowledge",
+    icon: "📖",
+    title: "知識・理解",
+    desc: "今日の理科の内容を理解できたか",
+    levels: [
+      { lv: 3, label: "よく\nできた", detail: "学習内容をよく理解し、説明できる" },
+      { lv: 2, label: "できた", detail: "学習内容をだいたい理解できた" },
+      { lv: 1, label: "もう少し", detail: "難しかった部分がある" }
+    ]
+  },
+  {
+    id: "thinking",
+    icon: "🧠",
+    title: "思考・判断",
+    desc: "結果から考察を立てたり、比べて考えたりできたか",
+    levels: [
+      { lv: 3, label: "よく\nできた", detail: "証拠をもとに筋道立てて考えられた" },
+      { lv: 2, label: "できた", detail: "だいたい考察できた" },
+      { lv: 1, label: "もう少し", detail: "なぜそうなるか考えるのが難しかった" }
+    ]
+  },
+  {
+    id: "inquiry",
+    icon: "🔍",
+    title: "問題解決・表現",
+    desc: "問題を立てたり、実験して伝えたりできたか",
+    levels: [
+      { lv: 3, label: "よく\nできた", detail: "問いを立て、実験し、発表まで一通りできた" },
+      { lv: 2, label: "できた", detail: "概ねできた" },
+      { lv: 1, label: "もう少し", detail: "手順の一部が難しかった" }
+    ]
+  },
+  {
+    id: "attitude",
+    icon: "💪",
+    title: "主体的な学び",
+    desc: "自分から考え、取り組む姿勢があったか",
+    levels: [
+      { lv: 3, label: "よく\nできた", detail: "積極的に考え、友達と協力できた" },
+      { lv: 2, label: "できた", detail: "だいたい積極的に取り組めた" },
+      { lv: 1, label: "もう少し", detail: "もっと自分から取り組みたかった" }
+    ]
+  }
+];
+
+const DEFAULT = { ratings: {}, comments: {}, overallComment: "", teacherComment: "" };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!state.ratings) state.ratings = {};
+if (!state.comments) state.comments = {};
+
+function renderPerspectives() {
+  document.getElementById("perspectiveList").innerHTML = PERSPECTIVES.map(p => `
+    <div class="eval-perspective">
+      <div class="ep-title"><span style="font-size:22px;">${p.icon}</span>${p.title}</div>
+      <div class="ep-desc">${p.desc}</div>
+      <div class="level-btns">
+        ${p.levels.map(l => `
+          <button class="level-btn lv${l.lv} ${state.ratings[p.id] === l.lv ? 'selected' : ''}"
+            data-pid="${p.id}" data-lv="${l.lv}" title="${l.detail}">
+            ${l.label}
+          </button>
+        `).join("")}
+      </div>
+      <div class="ep-comment">
+        <textarea data-pid="${p.id}" placeholder="コメント（どんなところがよかった？難しかった？）">${RikaNavi.escapeHTML(state.comments[p.id] || "")}</textarea>
+      </div>
+    </div>
+  `).join("");
+
+  document.querySelectorAll(".level-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pid = btn.dataset.pid, lv = parseInt(btn.dataset.lv);
+      state.ratings[pid] = state.ratings[pid] === lv ? 0 : lv;
+      renderPerspectives();
+      renderResult();
+    });
+  });
+
+  document.querySelectorAll(".ep-comment textarea").forEach(ta => {
+    ta.addEventListener("input", () => { state.comments[ta.dataset.pid] = ta.value; });
+  });
+}
+
+function renderResult() {
+  const bars = document.getElementById("resultBars");
+  const COLORS = { 3: "var(--c5)", 2: "var(--c3)", 1: "var(--c4)", 0: "var(--muted)" };
+  bars.innerHTML = PERSPECTIVES.map(p => {
+    const lv = state.ratings[p.id] || 0;
+    const pct = lv * 33.3;
+    return `
+      <div class="result-bar-row">
+        <div class="result-bar-label">${p.icon} ${p.title}</div>
+        <div class="result-bar-track">
+          <div class="result-bar-fill" style="width:${pct}%;background:${COLORS[lv]};"></div>
+        </div>
+        <div class="result-bar-score" style="color:${COLORS[lv]};">${lv > 0 ? "★".repeat(lv) + "☆".repeat(3-lv) : "未"}</div>
+      </div>
+    `;
+  }).join("");
+
+  const total = PERSPECTIVES.reduce((acc, p) => acc + (state.ratings[p.id] || 0), 0);
+  const max = PERSPECTIVES.length * 3;
+  const pct = Math.round(total / max * 100);
+  const msgs = [
+    [85, "🌟 今日の学びは満点！すばらしい！"],
+    [65, "👍 よく学べた一日！"],
+    [40, "💪 もう少し！次はもっとできるよ！"],
+    [0,  "📝 自分なりに頑張ろう。ゆっくり進もう。"]
+  ];
+  const msg = msgs.find(m => pct >= m[0])?.[1] || msgs[msgs.length-1][1];
+  document.getElementById("overallMsg").textContent = `合計：${total}/${max}点  ${msg}`;
+}
+
+["overallComment","teacherComment"].forEach(k => {
+  const el = document.getElementById(k);
+  el.value = state[k] || "";
+  el.addEventListener("input", () => { state[k] = el.value; });
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の自己評価を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const lines = ["【自己評価】"];
+  PERSPECTIVES.forEach(p => {
+    const lv = state.ratings[p.id] || 0;
+    const label = p.levels.find(l => l.lv === lv)?.label.replace("\n","") || "未";
+    lines.push(`${p.title}：${label}${state.comments[p.id] ? " ／ " + state.comments[p.id] : ""}`);
+  });
+  if (state.overallComment) lines.push(`\n全体：${state.overallComment}`);
+  if (state.teacherComment) lines.push(`先生より：${state.teacherComment}`);
+  RikaNavi.copy(lines.join("\n"));
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("自己評価をクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  renderPerspectives();
+  renderResult();
+  document.getElementById("overallComment").value = "";
+  document.getElementById("teacherComment").value = "";
+});
+
+renderPerspectives();
+renderResult();
+</script>
+</body>
+</html>

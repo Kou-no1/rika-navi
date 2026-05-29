@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ふり返りメタ認知ツール ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.journey-timeline {
+  position: relative;
+  padding-left: 32px;
+}
+.journey-timeline::before {
+  content: "";
+  position: absolute;
+  left: 12px; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--c1), var(--c2), var(--c3), var(--c4), var(--c5), var(--c6), var(--c7), var(--c8));
+  border-radius: 3px;
+}
+.journey-step {
+  position: relative;
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.journey-step::before {
+  content: attr(data-icon);
+  position: absolute;
+  left: -26px;
+  top: 10px;
+  font-size: 16px;
+  background: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--muted);
+}
+.journey-step.has-data { border-color: var(--step-color); }
+.journey-step.has-data::before { border-color: var(--step-color); background: var(--step-color); }
+.journey-step-title { font-weight: 900; font-size: 13px; margin-bottom: 4px; }
+.journey-step-data { font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+.journey-step-data.loaded { color: var(--ink); }
+
+.reflect-section {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.reflect-q {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--c8);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta-level {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.meta-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 6px;
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s;
+}
+.meta-btn.selected { background: var(--c8); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); box-shadow: var(--shadow-md); }
+
+.growth-chart {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  align-items: end;
+  height: 80px;
+  padding: 0 4px;
+}
+.growth-bar {
+  background: var(--muted-bg);
+  border: 2px solid var(--muted);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 8px;
+}
+.growth-bar.has-data { border-color: var(--bar-color); }
+.growth-bar .bar-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  border-radius: 2px 2px 0 0;
+  background: var(--bar-color, var(--muted));
+  transition: height 0.3s;
+}
+.growth-bar-label {
+  font-size: 9px;
+  text-align: center;
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+</style>
+</head>
+<body data-step="8" data-tool-id="reflect-metacog" data-tool-title="ふり返りメタ認知ツール" data-step-name="今日の学びをふり返る">
+
+<main>
+  <div class="tool-intro">
+    今日の<strong>学びの旅</strong>をふり返ろう。<br>
+    何ができるようになった？どんな考え方をした？次に生かせることは？
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🗺️</span> 今日の学びの旅</div>
+    <div class="section-subtitle">各ステップで入力したデータを自動で取り込んでいるよ</div>
+    <button class="btn btn-small" id="loadJourneyBtn" style="margin-bottom:12px;">🔄 データを読み込む</button>
+    <div class="journey-timeline" id="journeyTimeline"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📊</span> ステップの達成グラフ</div>
+    <div class="growth-chart" id="growthChart"></div>
+    <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:2px;" id="chartLabels"></div>
+  </div>
+
+  <div class="reflect-section">
+    <div class="reflect-q"><span>💪</span> 今日できるようになったことは？</div>
+    <div class="field-help">「〜ができるようになった」「〜が分かった」の形で書こう</div>
+    <textarea id="r_grew" placeholder="例：結果と考察を分けて書けるようになった。予想に理由をつける習慣がついた。" style="min-height:70px;"></textarea>
+  </div>
+
+  <div class="reflect-section">
+    <div class="reflect-q"><span>🤔</span> むずかしかったこと・うまくいかなかったことは？</div>
+    <div class="field-help">「〜がむずかしかった」「〜でつまずいた」→次への改善点につながるよ</div>
+    <textarea id="r_hard" placeholder="例：条件制御でどれを「同じにする条件」にすればよいか迷った。" style="min-height:70px;"></textarea>
+  </div>
+
+  <div class="reflect-section">
+    <div class="reflect-q"><span>💡</span> 考え方・学び方で気づいたことは？</div>
+    <div class="section-subtitle">「メタ認知」：自分の考え方を振り返る力</div>
+    <div class="meta-level" id="metaLevel">
+      <button class="meta-btn" data-v="evidence">証拠から考えた</button>
+      <button class="meta-btn" data-v="compare">比べて考えた</button>
+      <button class="meta-btn" data-v="prior">前の学習とつなげた</button>
+      <button class="meta-btn" data-v="friend">友達から学んだ</button>
+      <button class="meta-btn" data-v="question">自分で問いを持った</button>
+    </div>
+    <textarea id="r_meta" placeholder="例：証拠（結果）から考えることを意識できた。友達の考えを聞いて自分の考えが変わった。" style="min-height:60px;"></textarea>
+  </div>
+
+  <div class="reflect-section">
+    <div class="reflect-q"><span>🚀</span> 次に調べたいこと・やってみたいことは？</div>
+    <textarea id="r_next" placeholder="例：燃え方は温度でも変わるのか調べたい。他の気体でも同じ結果になるか試したい。" style="min-height:70px;"></textarea>
+  </div>
+
+  <div class="reflect-section">
+    <div class="reflect-q"><span>⭐</span> 今日の学び方に点数をつけるとしたら？</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="range" id="r_score" min="1" max="10" value="5" style="flex:1;min-width:120px;">
+      <div style="font-family:var(--font-display);font-weight:900;font-size:28px;color:var(--c8);min-width:60px;text-align:center;" id="scoreDisplay">5点</div>
+    </div>
+    <div id="scoreFeedback" style="font-size:13px;margin-top:8px;padding:8px;border-radius:8px;background:var(--muted-bg);"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📝</span> ふり返りまとめ</div>
+    <div class="preview" id="reflectSummary">
+      <div class="preview-empty">上に入力すると、ふり返りのまとめが作られるよ</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "reflect-metacog";
+
+// 各ステップから取り込むデータのマッピング
+const JOURNEY_STEPS = [
+  { num:1, icon:"🔍", color:"var(--c1)", label:"何を調べる？",       toolId:"question-maker",        extract: d => d.topic ? `問題：${d.topic}` : null },
+  { num:2, icon:"💭", color:"var(--c2)", label:"どうなると思う？",    toolId:"prediction-maker",      extract: d => d.prediction ? `予想：${d.prediction}` : null },
+  { num:3, icon:"🧪", color:"var(--c3)", label:"どうやって調べる？",  toolId:"plan-navigator",        extract: d => d.changeWhat ? `変える条件：${d.changeWhat}` : null },
+  { num:4, icon:"⚗️", color:"var(--c4)", label:"実験する",            toolId:"observation-memo",      extract: d => d.memos?.length ? `メモ${d.memos.length}件` : null },
+  { num:5, icon:"📊", color:"var(--c5)", label:"整理する",            toolId:"result-board",          extract: d => d.findings?.filter(f=>f.text).length ? `気づき${d.findings.filter(f=>f.text).length}件` : null },
+  { num:6, icon:"🧠", color:"var(--c6)", label:"結果から考える",      toolId:"consideration-builder", extract: d => d.summaryText ? `まとめ：${d.summaryText.slice(0,30)}…` : null },
+  { num:7, icon:"📣", color:"var(--c7)", label:"みんなに伝える",      toolId:"present-template",      extract: d => d.p_summary ? `発表：${d.p_summary.slice(0,30)}…` : null },
+  { num:8, icon:"🌱", color:"var(--c8)", label:"ふり返る",            toolId:null,                    extract: () => null }
+];
+
+const META_LABELS = {
+  evidence:"証拠から考えた", compare:"比べて考えた",
+  prior:"前の学習とつなげた", friend:"友達から学んだ", question:"自分で問いを持った"
+};
+
+const DEFAULT = { r_grew:"", r_hard:"", r_meta:"", r_next:"", r_score:5, metaSelected:[], journeyLoaded:false };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.metaSelected)) state.metaSelected = [];
+
+function bindInputs() {
+  ["r_grew","r_hard","r_meta","r_next"].forEach(k => {
+    const el = document.getElementById(k);
+    el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; updateSummary(); });
+  });
+  const slider = document.getElementById("r_score");
+  slider.value = state.r_score || 5;
+  updateScoreDisplay(slider.value);
+  slider.addEventListener("input", () => {
+    state.r_score = parseInt(slider.value);
+    updateScoreDisplay(slider.value);
+    updateSummary();
+  });
+}
+
+function updateScoreDisplay(v) {
+  v = parseInt(v);
+  document.getElementById("scoreDisplay").textContent = `${v}点`;
+  const msgs = ["","頑張った！次も続けよう","頑張った！次も続けよう","少しずつ上手くなってるよ","少しずつ上手くなってるよ","まずまず！あと少し","まずまず！あと少し","よく考えて学べた！","よく考えて学べた！","すばらしい学び方だ！","完璧！今日の学びは最高！"];
+  document.getElementById("scoreFeedback").textContent = msgs[v] || "";
+}
+
+// メタ認知ボタン
+function renderMetaBtns() {
+  document.querySelectorAll(".meta-btn").forEach(b => {
+    b.classList.toggle("selected", state.metaSelected.includes(b.dataset.v));
+    b.addEventListener("click", () => {
+      const v = b.dataset.v;
+      const i = state.metaSelected.indexOf(v);
+      if (i >= 0) state.metaSelected.splice(i, 1);
+      else state.metaSelected.push(v);
+      renderMetaBtns();
+      updateSummary();
+    });
+  });
+}
+
+// ジャーニータイムライン
+function loadJourney() {
+  const timeline = document.getElementById("journeyTimeline");
+  const chartEl = document.getElementById("growthChart");
+  const labelsEl = document.getElementById("chartLabels");
+
+  timeline.innerHTML = JOURNEY_STEPS.map(s => {
+    const data = s.toolId ? RikaNavi.load(s.toolId, {}) : {};
+    const extracted = s.extract ? s.extract(data) : null;
+    const hasData = !!extracted;
+    return `
+      <div class="journey-step ${hasData ? 'has-data' : ''}" data-icon="${s.icon}"
+        style="${hasData ? `--step-color:${s.color};` : ''}">
+        <div class="journey-step-title" style="${hasData ? `color:${s.color};` : 'color:var(--ink-soft);'}">${s.num}. ${s.label}</div>
+        <div class="journey-step-data ${hasData ? 'loaded' : ''}">${extracted || '（まだ入力がないよ）'}</div>
+      </div>
+    `;
+  }).join("");
+
+  // グラフ
+  chartEl.innerHTML = JOURNEY_STEPS.map(s => {
+    const data = s.toolId ? RikaNavi.load(s.toolId, {}) : {};
+    const extracted = s.extract ? s.extract(data) : null;
+    const filled = extracted ? 80 : 8;
+    return `
+      <div class="growth-bar ${extracted ? 'has-data' : ''}" style="--bar-color:${s.color};">
+        <div class="bar-fill" style="height:${filled}%;background:${s.color};"></div>
+      </div>
+    `;
+  }).join("");
+  labelsEl.innerHTML = JOURNEY_STEPS.map(s =>
+    `<div class="growth-bar-label">${s.icon}</div>`
+  ).join("");
+
+  state.journeyLoaded = true;
+  RikaNavi.toast("🔄 データを読み込んだよ！");
+}
+
+document.getElementById("loadJourneyBtn").addEventListener("click", loadJourney);
+
+function updateSummary() {
+  const el = document.getElementById("reflectSummary");
+  const { r_grew, r_hard, r_meta, r_next, r_score, metaSelected } = state;
+  if (!r_grew.trim() && !r_hard.trim() && !r_meta.trim() && !r_next.trim()) {
+    el.innerHTML = '<div class="preview-empty">上に入力すると、ふり返りのまとめが作られるよ</div>';
+    return;
+  }
+  const metaLabels = metaSelected.map(v => META_LABELS[v]).filter(Boolean).join("・");
+  let html = "";
+  if (r_grew.trim())   html += `<div style="margin-bottom:8px;"><strong>💪 できたこと：</strong>${RikaNavi.escapeHTML(r_grew)}</div>`;
+  if (r_hard.trim())   html += `<div style="margin-bottom:8px;"><strong>🤔 むずかしかったこと：</strong>${RikaNavi.escapeHTML(r_hard)}</div>`;
+  if (metaLabels)      html += `<div style="margin-bottom:8px;"><strong>🧠 考え方：</strong>${RikaNavi.escapeHTML(metaLabels)}</div>`;
+  if (r_meta.trim())   html += `<div style="margin-bottom:8px;"><strong>💡 気づき：</strong>${RikaNavi.escapeHTML(r_meta)}</div>`;
+  if (r_next.trim())   html += `<div style="margin-bottom:8px;"><strong>🚀 次の問い：</strong>${RikaNavi.escapeHTML(r_next)}</div>`;
+  if (r_score)         html += `<div style="margin-top:8px;padding:8px;background:var(--muted-bg);border-radius:6px;"><strong>⭐ 今日の学び：</strong>${r_score}点</div>`;
+  el.innerHTML = html;
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のふり返りを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  RikaNavi.copy(document.getElementById("reflectSummary").innerText);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("ふり返りをクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  bindInputs();
+  renderMetaBtns();
+  updateSummary();
+});
+
+// 起動時にジャーニーを自動読み込み
+bindInputs();
+renderMetaBtns();
+loadJourney();
+updateSummary();
+</script>
+</body>
+</html>

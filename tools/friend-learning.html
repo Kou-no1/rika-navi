@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>友達から学んだことカード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.learn-card {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+.learn-card-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.learn-card-num {
+  width: 28px; height: 28px;
+  background: var(--c8);
+  color: white;
+  border: 2.5px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.learn-card input[type="text"] {
+  border: 1.5px solid var(--muted);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.learn-card textarea {
+  width: 100%;
+  border: 1.5px solid var(--muted);
+  border-radius: 8px;
+  padding: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  min-height: 60px;
+  margin-bottom: 8px;
+}
+.learn-type-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.learn-type-btn {
+  padding: 5px 10px;
+  border: 2px solid var(--muted);
+  border-radius: 20px;
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+}
+.learn-type-btn.active { background: var(--c8); color: white; border-color: var(--line); text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+.learn-card-del {
+  position: absolute;
+  top: 10px; right: 10px;
+  border: 2px solid var(--muted);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 11px;
+}
+.impact-stars { display: flex; gap: 4px; }
+.impact-star {
+  font-size: 20px;
+  cursor: pointer;
+  transition: transform 0.1s;
+  line-height: 1;
+}
+.impact-star:hover { transform: scale(1.2); }
+
+.summary-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.wall-card {
+  background: white;
+  border: 2.5px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.wall-card-name { font-weight: 900; font-size: 11px; color: var(--c8); margin-bottom: 4px; }
+.wall-card-type { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: var(--c8); color: white; display: inline-block; margin-bottom: 4px; }
+</style>
+</head>
+<body data-step="8" data-tool-id="friend-learning" data-tool-title="友達から学んだことカード" data-step-name="今日の学びをふり返る">
+
+<main>
+  <div class="tool-intro">
+    友達の考えや気づきから<strong>学んだこと</strong>を記録しよう。<br>
+    友達から学ぶことで、自分の考えが広がり深まるよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">➕</span> 学んだことを追加</div>
+    <button class="btn btn-strong btn-block" id="addCardBtn">＋ 友達から学んだことを追加</button>
+  </div>
+
+  <div id="cardList"></div>
+
+  <div class="section" id="summarySection" style="display:none;">
+    <div class="section-title"><span class="emoji">🌸</span> みんなの学びの壁</div>
+    <div class="section-subtitle">追加した内容がカードになって並ぶよ</div>
+    <div class="summary-wall" id="summaryWall"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💬</span> まとめのひとこと</div>
+    <div class="field-help">友達から学んで、自分の考えがどう変わったかまとめよう</div>
+    <textarea id="overallReflect" style="min-height:70px;" placeholder="例：友達の気づきを聞いて、自分が気づかなかった視点に気づけた。次は自分からも積極的に発表しようと思った。"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 全部コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>友達から学ぶ力を育てるポイント</strong>：「なるほど！」と思ったことをすぐメモしよう。「それはなぜ？」と自分に問いかけよう。友達の考えのどこが「よかった」かを具体的に言えると、より深く学べるよ。
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "friend-learning";
+const LEARN_TYPES = [
+  { id: "new",     label: "新しい考え",   desc: "自分になかった視点・発想" },
+  { id: "same",    label: "同じ考え",     desc: "自分と同じで確信が深まった" },
+  { id: "differ",  label: "ちがう考え",   desc: "自分と違って、考えさせられた" },
+  { id: "method",  label: "やり方・工夫", desc: "実験・記録・発表の方法の工夫" },
+  { id: "question",label: "よい質問",     desc: "友達の質問が学びを広げた" }
+];
+
+const DEFAULT = { cards: [], overallReflect: "" };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.cards)) state.cards = [];
+
+function addCard() {
+  state.cards.push({ id: Date.now(), name: "", type: "new", learned: "", changed: "", impact: 0 });
+  renderCards();
+  // 追加したカードまでスクロール
+  setTimeout(() => {
+    const cards = document.querySelectorAll(".learn-card");
+    if (cards.length) cards[cards.length-1].scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 100);
+}
+
+function renderCards() {
+  const wrap = document.getElementById("cardList");
+  if (!state.cards.length) {
+    wrap.innerHTML = "";
+    document.getElementById("summarySection").style.display = "none";
+    return;
+  }
+  document.getElementById("summarySection").style.display = "block";
+
+  wrap.innerHTML = state.cards.map((card, i) => {
+    const type = LEARN_TYPES.find(t => t.id === card.type);
+    return `
+      <div class="learn-card">
+        <button class="learn-card-del" data-i="${i}">✕</button>
+        <div class="learn-card-header">
+          <div class="learn-card-num">${i+1}</div>
+          <input type="text" data-i="${i}" data-f="name" value="${RikaNavi.escapeHTML(card.name)}"
+            placeholder="誰から？（名前・班）" style="flex:1;min-width:100px;">
+        </div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">種類</div>
+        <div class="learn-type-btns">
+          ${LEARN_TYPES.map(t => `
+            <button class="learn-type-btn ${card.type === t.id ? 'active' : ''}"
+              data-i="${i}" data-type="${t.id}" title="${t.desc}">${t.label}</button>
+          `).join("")}
+        </div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;">何を学んだ？</div>
+        <textarea data-i="${i}" data-f="learned" placeholder="例：びんの大きさで火が消えるまでの時間が変わることに気づいていた。">${RikaNavi.escapeHTML(card.learned)}</textarea>
+
+        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;">自分の考えがどう変わった？</div>
+        <textarea data-i="${i}" data-f="changed" placeholder="例：自分は酸素の量だけ考えていたが、容器の大きさも関係すると気づいた。">${RikaNavi.escapeHTML(card.changed)}</textarea>
+
+        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">インパクト度</div>
+        <div class="impact-stars">
+          ${[1,2,3].map(n => `
+            <span class="impact-star" data-i="${i}" data-n="${n}">${card.impact >= n ? '⭐' : '☆'}</span>
+          `).join("")}
+          <span style="font-size:12px;color:var(--ink-soft);margin-left:6px;align-self:center;">${card.impact >= 3 ? '大きな気づき！' : card.impact >= 2 ? 'なるほど！' : card.impact >= 1 ? 'ちょっと気になった' : ''}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // イベント登録
+  wrap.querySelectorAll("input[data-f], textarea[data-f]").forEach(el => {
+    el.addEventListener("input", () => {
+      state.cards[parseInt(el.dataset.i)][el.dataset.f] = el.value;
+    });
+  });
+  wrap.querySelectorAll(".learn-type-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.cards[parseInt(btn.dataset.i)].type = btn.dataset.type;
+      renderCards();
+      renderWall();
+    });
+  });
+  wrap.querySelectorAll(".impact-star").forEach(star => {
+    star.addEventListener("click", () => {
+      const i = parseInt(star.dataset.i), n = parseInt(star.dataset.n);
+      state.cards[i].impact = state.cards[i].impact === n ? n - 1 : n;
+      renderCards();
+    });
+  });
+  wrap.querySelectorAll(".learn-card-del").forEach(b => {
+    b.addEventListener("click", () => {
+      state.cards.splice(parseInt(b.dataset.i), 1);
+      RikaNavi.save(TOOL_ID, state);
+      renderCards();
+      renderWall();
+    });
+  });
+  renderWall();
+}
+
+function renderWall() {
+  const wall = document.getElementById("summaryWall");
+  wall.innerHTML = state.cards.filter(c => c.learned.trim()).map(card => {
+    const type = LEARN_TYPES.find(t => t.id === card.type);
+    return `
+      <div class="wall-card">
+        <div class="wall-card-type">${type?.label || ""}</div>
+        <div class="wall-card-name">${RikaNavi.escapeHTML(card.name || "（名前なし）")}</div>
+        <div>${RikaNavi.escapeHTML(card.learned.slice(0, 60))}${card.learned.length > 60 ? "…" : ""}</div>
+        <div style="margin-top:4px;">${"⭐".repeat(card.impact)}${"☆".repeat(3 - card.impact)}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+document.getElementById("addCardBtn").addEventListener("click", addCard);
+
+const overallEl = document.getElementById("overallReflect");
+overallEl.value = state.overallReflect || "";
+overallEl.addEventListener("input", () => { state.overallReflect = overallEl.value; });
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}のデータを保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  if (!state.cards.length) { RikaNavi.toast("まだ何も追加していないよ"); return; }
+  const lines = ["【友達から学んだこと】"];
+  state.cards.forEach((card, i) => {
+    lines.push(`\n${i+1}. ${card.name || "（名前なし）"}`);
+    const type = LEARN_TYPES.find(t => t.id === card.type);
+    lines.push(`  種類：${type?.label || ""}`);
+    if (card.learned) lines.push(`  学んだこと：${card.learned}`);
+    if (card.changed) lines.push(`  自分の変化：${card.changed}`);
+  });
+  if (state.overallReflect) lines.push(`\nまとめ：${state.overallReflect}`);
+  RikaNavi.copy(lines.join("\n"));
+});
+
+renderCards();
+</script>
+</body>
+</html>
