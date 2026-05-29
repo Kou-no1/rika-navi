@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>発表リハーサル ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.rehearsal-stage {
+  background: linear-gradient(135deg, #fff 0%, #fff5fb 100%);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+.big-timer {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 64px;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  margin: 16px 0;
+  color: var(--ink);
+  background: var(--bg);
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 24px;
+  display: inline-block;
+  box-shadow: var(--shadow-md);
+  min-width: 240px;
+}
+.big-timer.running { color: var(--c7); }
+.big-timer.over { color: var(--c4); animation: blink 0.8s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.target-time {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.timer-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+
+.script-box {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 80px;
+  max-height: 240px;
+  overflow-y: auto;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.script-box.loaded { color: var(--ink); font-style: normal; }
+
+.check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+@media (max-width: 480px) { .check-grid { grid-template-columns: 1fr; } }
+
+.eval-card {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.eval-card:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-sm); }
+.eval-card.checked { background: #fff0f8; border-color: var(--c7); }
+.eval-card input { margin-right: 6px; cursor: pointer; }
+.eval-label { font-size: 13px; font-weight: 700; }
+.eval-desc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+.history-item {
+  background: white;
+  border: 2px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.history-time {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--c7);
+  min-width: 56px;
+  flex-shrink: 0;
+}
+.history-checks { font-size: 12px; }
+</style>
+</head>
+<body data-step="7" data-tool-id="rehearsal" data-tool-title="発表リハーサル" data-step-name="みんなに伝える">
+
+<main>
+  <div class="tool-intro">
+    本番前に<strong>練習</strong>しよう。タイマーで時間を計りながら、発表のポイントを確認できるよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📄</span> 発表する内容</div>
+    <div class="field-help">発表文テンプレートから取り込むか、直接書こう</div>
+    <button style="display:inline-flex;align-items:center;gap:6px;background:#fff0f8;border:2px solid var(--c7);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);margin-bottom:8px;" id="importScriptBtn">📥 発表文テンプレートから取り込む</button>
+    <div class="script-box" id="scriptBox">（発表文テンプレートで作った発表文、または下に直接入力）</div>
+    <textarea id="scriptEdit" style="margin-top:8px;" placeholder="ここに発表文を直接入力してもOK"></textarea>
+    <button class="btn btn-small" id="applyScriptBtn" style="margin-top:6px;">↑ 上に反映</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">⏱️</span> リハーサルタイマー</div>
+    <div class="rehearsal-stage">
+      <div class="target-time">目標時間：<strong id="targetLabel">2分</strong>
+        <input type="range" id="targetSlider" min="1" max="5" value="2" style="vertical-align:middle;margin-left:8px;width:80px;">
+      </div>
+      <div class="big-timer" id="bigTimer">00:00</div>
+      <div class="timer-btns">
+        <button class="btn btn-strong" id="startBtn">▶ スタート</button>
+        <button class="btn" id="pauseBtn">⏸ 一時停止</button>
+        <button class="btn btn-small" id="resetBtn">↺ リセット</button>
+        <button class="btn btn-primary" id="lapBtn">🏁 終了・記録</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">✅</span> セルフチェック</div>
+    <div class="section-subtitle">発表できたポイントにチェックしよう</div>
+    <div class="check-grid" id="evalGrid"></div>
+    <div style="margin-top:12px;">
+      <label class="field-label">ふり返りメモ</label>
+      <textarea id="evalMemo" placeholder="よかったこと、次に直したいことを書こう" style="min-height:56px;"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-strong" id="recordBtn">📋 この練習を記録する</button>
+    </div>
+  </div>
+
+  <div class="section" id="historySection" style="display:none;">
+    <div class="section-title"><span class="emoji">📊</span> 練習の記録</div>
+    <div id="historyList"></div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearHistoryBtn">記録をクリア</button>
+    </div>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "rehearsal";
+const EVAL_ITEMS = [
+  { id: "voice",    label: "声の大きさ",     desc: "聞こえる声で話せた" },
+  { id: "speed",    label: "話す速さ",        desc: "ゆっくりはっきり話せた" },
+  { id: "eye",      label: "アイコンタクト",  desc: "聞き手を見て話せた" },
+  { id: "order",    label: "順番通り",        desc: "結果→考察→まとめの順で話せた" },
+  { id: "evidence", label: "根拠を示した",    desc: "結果や数字を使って説明できた" },
+  { id: "time",     label: "時間内",          desc: "目標時間内に収まった" }
+];
+const DEFAULT = { scriptText: "", history: [], evalChecks: [], evalMemo: "" };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.history)) state.history = [];
+
+// スクリプト表示
+function updateScriptBox() {
+  const box = document.getElementById("scriptBox");
+  if (state.scriptText.trim()) {
+    box.textContent = state.scriptText;
+    box.classList.add("loaded");
+  } else {
+    box.textContent = "（発表文テンプレートで作った発表文、または下に直接入力）";
+    box.classList.remove("loaded");
+  }
+}
+
+document.getElementById("importScriptBtn").addEventListener("click", () => {
+  const d = RikaNavi.load("present-text-for-rehearsal", { text: "" });
+  if (!d.text.trim()) {
+    // 発表文テンプレートの各パートからも試みる
+    const pt = RikaNavi.load("present-template", {});
+    const parts = ["p_result","p_compare","p_thinking","p_reason","p_summary"];
+    const prefixes = ["わたしたちの結果は、","予想と比べると、","この結果から、","理由は、","以上のことから、"];
+    const lines = parts.map((k,i) => pt[k] ? prefixes[i] + pt[k] : "").filter(Boolean);
+    if (!lines.length) { RikaNavi.toast("発表文テンプレートにデータがないよ"); return; }
+    state.scriptText = lines.join("\n");
+  } else {
+    state.scriptText = d.text;
+  }
+  updateScriptBox();
+  RikaNavi.toast("📥 発表文を取り込んだよ！");
+});
+
+document.getElementById("applyScriptBtn").addEventListener("click", () => {
+  const text = document.getElementById("scriptEdit").value.trim();
+  if (!text) return;
+  state.scriptText = text;
+  document.getElementById("scriptEdit").value = "";
+  updateScriptBox();
+  RikaNavi.save(TOOL_ID, state);
+});
+
+// タイマー
+let timerSec = 0, timerRunning = false, timerInterval = null;
+let targetSec = 120;
+
+document.getElementById("targetSlider").addEventListener("input", e => {
+  targetSec = parseInt(e.target.value) * 60;
+  document.getElementById("targetLabel").textContent = `${e.target.value}分`;
+});
+
+function formatTime(s) {
+  return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById("bigTimer");
+  el.textContent = formatTime(timerSec);
+  el.className = "big-timer" + (timerRunning ? " running" : "") + (timerSec > targetSec ? " over" : "");
+}
+
+document.getElementById("startBtn").addEventListener("click", () => {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerInterval = setInterval(() => { timerSec++; updateTimerDisplay(); }, 1000);
+});
+document.getElementById("pauseBtn").addEventListener("click", () => {
+  clearInterval(timerInterval); timerRunning = false; updateTimerDisplay();
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  clearInterval(timerInterval); timerRunning = false; timerSec = 0; updateTimerDisplay();
+});
+document.getElementById("lapBtn").addEventListener("click", () => {
+  clearInterval(timerInterval); timerRunning = false;
+  const diff = timerSec - targetSec;
+  const msg = diff <= 0 ? `✅ 目標時間より${Math.abs(diff)}秒短かった` :
+              diff <= 15 ? `👍 目標時間より${diff}秒オーバー（惜しい！）` :
+              `⚠️ 目標時間より${diff}秒オーバー`;
+  RikaNavi.toast(msg);
+});
+updateTimerDisplay();
+
+// セルフチェック
+function renderEval() {
+  const grid = document.getElementById("evalGrid");
+  grid.innerHTML = EVAL_ITEMS.map(item => {
+    const checked = (state.evalChecks || []).includes(item.id);
+    return `
+      <div class="eval-card ${checked ? 'checked' : ''}" data-id="${item.id}">
+        <input type="checkbox" ${checked ? 'checked' : ''}>
+        <span class="eval-label">${item.label}</span>
+        <div class="eval-desc">${item.desc}</div>
+      </div>
+    `;
+  }).join("");
+  grid.querySelectorAll(".eval-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const cb = card.querySelector("input");
+      cb.checked = !cb.checked;
+      const id = card.dataset.id;
+      if (!state.evalChecks) state.evalChecks = [];
+      const i = state.evalChecks.indexOf(id);
+      if (i >= 0) state.evalChecks.splice(i, 1);
+      else state.evalChecks.push(id);
+      card.classList.toggle("checked", cb.checked);
+    });
+  });
+  const memo = document.getElementById("evalMemo");
+  memo.value = state.evalMemo || "";
+  memo.addEventListener("input", () => { state.evalMemo = memo.value; });
+}
+
+document.getElementById("recordBtn").addEventListener("click", () => {
+  const record = {
+    time: formatTime(timerSec),
+    timeSec: timerSec,
+    targetSec,
+    checks: [...(state.evalChecks || [])],
+    memo: document.getElementById("evalMemo").value.trim(),
+    date: new Date().toLocaleString("ja-JP", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })
+  };
+  state.history.unshift(record);
+  if (state.history.length > 10) state.history.pop();
+  RikaNavi.save(TOOL_ID, state);
+  renderHistory();
+  RikaNavi.toast("📋 練習を記録したよ！");
+});
+
+function renderHistory() {
+  const section = document.getElementById("historySection");
+  const list = document.getElementById("historyList");
+  if (!state.history.length) { section.style.display = "none"; return; }
+  section.style.display = "block";
+  list.innerHTML = state.history.map((r, i) => {
+    const checkCount = r.checks.length;
+    const onTime = r.timeSec <= r.targetSec + 15;
+    const labels = r.checks.map(id => EVAL_ITEMS.find(x => x.id === id)?.label || id);
+    return `
+      <div class="history-item">
+        <div class="history-time">${r.time}</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px;">${r.date} ／ ${onTime ? '✅ 時間内' : '⚠️ オーバー'}</div>
+          <div class="history-checks">${labels.map(l => `<span style="background:var(--muted-bg);padding:2px 6px;border-radius:4px;margin-right:3px;font-size:11px;">${l}</span>`).join("")}</div>
+          ${r.memo ? `<div style="font-size:12px;margin-top:4px;color:var(--ink-soft);">${RikaNavi.escapeHTML(r.memo)}</div>` : ""}
+        </div>
+        <button data-i="${i}" style="border:2px solid var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:700;">✕</button>
+      </div>
+    `;
+  }).join("");
+  list.querySelectorAll("button[data-i]").forEach(b => {
+    b.addEventListener("click", () => {
+      state.history.splice(parseInt(b.dataset.i), 1);
+      RikaNavi.save(TOOL_ID, state);
+      renderHistory();
+    });
+  });
+}
+
+document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+  if (!confirm("練習の記録をすべてクリアしますか？")) return;
+  state.history = [];
+  RikaNavi.save(TOOL_ID, state);
+  renderHistory();
+});
+
+updateScriptBox();
+renderEval();
+renderHistory();
+</script>
+</body>
+</html>

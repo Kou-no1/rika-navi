@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>発表文テンプレート ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.present-step {
+  background: white;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+.present-step::before {
+  content: attr(data-n);
+  position: absolute;
+  top: -14px; left: 16px;
+  width: 30px; height: 30px;
+  background: var(--c7);
+  color: white;
+  border: 2.5px solid var(--line);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 14px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,.2);
+  line-height: 1;
+}
+.present-step-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--c7);
+  margin-bottom: 8px;
+  padding-top: 4px;
+}
+.present-step textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px;
+  border: 2px solid var(--muted);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.present-step textarea:focus { outline: none; background: #fff8f5; border-color: var(--c7); }
+
+.speech-preview {
+  background: linear-gradient(135deg, #fff 0%, #fff5fb 100%);
+  border: 3px solid var(--c7);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+  font-size: 15px;
+  line-height: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.speech-preview-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--c7);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.speech-part {
+  display: block;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  border-left: 4px solid transparent;
+}
+.speech-part.result   { border-left-color: var(--c5); background: #f0fdf4; }
+.speech-part.compare  { border-left-color: var(--c2); background: #f9f0ff; }
+.speech-part.thinking { border-left-color: var(--c6); background: #f0f4ff; }
+.speech-part.reason   { border-left-color: var(--c3); background: #fff8f0; }
+.speech-part.summary  { border-left-color: var(--c7); background: #fff0f8; font-weight: 900; }
+
+.import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff0f8;
+  border: 2px solid var(--c7);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+}
+.import-btn:hover { background: #ffe0f3; }
+
+.check-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.check-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+}
+</style>
+</head>
+<body data-step="7" data-tool-id="present-template" data-tool-title="発表文テンプレート" data-step-name="みんなに伝える">
+
+<main>
+  <div class="tool-intro">
+    考えたことを<strong>順番よく</strong>発表しよう。<br>
+    考察ビルダーで作った内容を取り込んで、発表文を完成させよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📥</span> 考察ビルダーから取り込む</div>
+    <button class="import-btn" id="importBtn">📥 考察ビルダーのデータを取り込む</button>
+    <div id="importStatus" style="font-size:12px;color:var(--ink-soft);"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📝</span> 発表文を作ろう</div>
+    <div class="section-subtitle">5つのパートを順番に書いていこう</div>
+
+    <div class="present-step" data-n="1">
+      <div class="present-step-title">📊 結果を伝える</div>
+      <div class="field-help">「わたしたちの結果は〜でした」</div>
+      <textarea id="p_result" placeholder="例：わたしたちの結果は、ふたをしたびんのろうそくは2分後に消え、ふたをしないびんは5分後もまだ燃えていました。"></textarea>
+    </div>
+
+    <div class="present-step" data-n="2">
+      <div class="present-step-title">💭 予想と比べる</div>
+      <div class="field-help">「予想と比べると〜でした」</div>
+      <textarea id="p_compare" placeholder="例：予想では空気が必要と考えていたので、予想通りの結果でした。"></textarea>
+    </div>
+
+    <div class="present-step" data-n="3">
+      <div class="present-step-title">🧠 考えたことを伝える</div>
+      <div class="field-help">「この結果から〜と考えました」</div>
+      <textarea id="p_thinking" placeholder="例：この結果から、ものが燃え続けるためには酸素が必要だと考えました。"></textarea>
+    </div>
+
+    <div class="present-step" data-n="4">
+      <div class="present-step-title">🔗 理由を言う</div>
+      <div class="field-help">「なぜなら〜からです」</div>
+      <textarea id="p_reason" placeholder="例：なぜなら、ふたをすると外から空気が入らなくなり、酸素がなくなったためと考えたからです。"></textarea>
+    </div>
+
+    <div class="present-step" data-n="5">
+      <div class="present-step-title">📌 まとめる</div>
+      <div class="field-help">「以上のことから〜とまとめました」</div>
+      <textarea id="p_summary" placeholder="例：以上のことから、ものが燃え続けるためには酸素（空気）が必要であるとまとめました。"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎤</span> 完成した発表文</div>
+    <div class="speech-preview" id="speechPreview">
+      <div style="color:var(--ink-soft);font-style:italic;text-align:center;padding:14px 0;">上のパートを入力すると、ここに発表文が表示されるよ</div>
+    </div>
+    <div class="check-badges" id="checkBadges"></div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearBtn">クリア</button>
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>発表のコツ</strong>：①聞き手を見て話す ②ゆっくりはっきり ③黒板や資料を指しながら ④結果→考察→まとめの順を守る
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "present-template";
+const FIELDS = ["p_result","p_compare","p_thinking","p_reason","p_summary"];
+const DEFAULT = { p_result:"", p_compare:"", p_thinking:"", p_reason:"", p_summary:"" };
+
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+
+function bindAll() {
+  FIELDS.forEach(k => {
+    const el = document.getElementById(k);
+    el.value = state[k] || "";
+    el.addEventListener("input", () => { state[k] = el.value; updatePreview(); });
+  });
+}
+
+function updatePreview() {
+  const preview = document.getElementById("speechPreview");
+  const parts = [
+    { key: "p_result",   cls: "result",   prefix: "わたしたちの結果は、" },
+    { key: "p_compare",  cls: "compare",  prefix: "予想と比べると、" },
+    { key: "p_thinking", cls: "thinking", prefix: "この結果から、" },
+    { key: "p_reason",   cls: "reason",   prefix: "理由は、" },
+    { key: "p_summary",  cls: "summary",  prefix: "以上のことから、" }
+  ];
+
+  const filled = parts.filter(p => state[p.key].trim());
+  if (!filled.length) {
+    preview.innerHTML = '<div style="color:var(--ink-soft);font-style:italic;text-align:center;padding:14px 0;">上のパートを入力すると、ここに発表文が表示されるよ</div>';
+    document.getElementById("checkBadges").innerHTML = "";
+    return;
+  }
+
+  preview.innerHTML = parts.map(p => {
+    const text = state[p.key].trim();
+    if (!text) return "";
+    // prefixが既に含まれていたらそのまま、なければ付ける
+    const hasPrefix = text.startsWith(p.prefix.slice(0, 4));
+    return `<span class="speech-part ${p.cls}">${RikaNavi.escapeHTML(hasPrefix ? text : p.prefix + text)}</span>`;
+  }).join("");
+
+  // チェックバッジ
+  const checks = [
+    { label: "結果", ok: !!state.p_result.trim() },
+    { label: "予想比較", ok: !!state.p_compare.trim() },
+    { label: "考察", ok: !!state.p_thinking.trim() },
+    { label: "理由", ok: !!state.p_reason.trim() },
+    { label: "まとめ", ok: !!state.p_summary.trim() }
+  ];
+  document.getElementById("checkBadges").innerHTML = checks.map(c =>
+    `<span class="check-badge" style="background:${c.ok ? '#e6f7ed' : '#f4f0e1'};color:${c.ok ? 'var(--ok)' : 'var(--ink-soft)'};">${c.ok ? '✅' : '⬜'} ${c.label}</span>`
+  ).join("");
+}
+
+// 考察ビルダーから取り込み
+document.getElementById("importBtn").addEventListener("click", () => {
+  const cb = RikaNavi.load("consideration-builder", {
+    resultText:"", predictionMatch:"", predictionDiff:"",
+    thinkingText:"", reasonText:"", summaryText:""
+  });
+
+  const matchLabels = {
+    same: "予想通りでした。",
+    partial: "だいたい予想通りでしたが、一部ちがいました。",
+    diff: "予想とはちがいました。"
+  };
+
+  let imported = 0;
+  if (cb.resultText.trim())   { state.p_result   = cb.resultText.trim();   imported++; }
+  if (cb.predictionMatch)     { state.p_compare  = matchLabels[cb.predictionMatch] + (cb.predictionDiff ? " " + cb.predictionDiff : ""); imported++; }
+  if (cb.thinkingText.trim()) { state.p_thinking = cb.thinkingText.trim(); imported++; }
+  if (cb.reasonText.trim())   { state.p_reason   = cb.reasonText.trim();   imported++; }
+  if (cb.summaryText.trim())  { state.p_summary  = cb.summaryText.trim();  imported++; }
+
+  if (!imported) { RikaNavi.toast("考察ビルダーにデータがないよ"); return; }
+  bindAll();
+  updatePreview();
+  document.getElementById("importStatus").textContent = `✓ 考察ビルダーから ${imported} 項目を取り込んだよ`;
+  RikaNavi.toast(`📥 ${imported}項目を取り込んだよ！`);
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  // 発表リハーサルでも使えるように発表文テキストを共有キーに保存
+  const text = document.getElementById("speechPreview").innerText;
+  RikaNavi.save("present-text-for-rehearsal", { text });
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の発表文を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  RikaNavi.copy(document.getElementById("speechPreview").innerText);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if (!confirm("発表文をクリアしますか？")) return;
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  RikaNavi.clear(TOOL_ID);
+  bindAll();
+  updatePreview();
+});
+
+bindAll();
+updatePreview();
+</script>
+</body>
+</html>

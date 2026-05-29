@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聞き手チェックカード ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.listener-mode {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.mode-btn.active { background: var(--c7); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+
+.eval-row {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.eval-row-label { font-weight: 900; font-size: 14px; flex: 1; }
+.eval-row-desc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+.star-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.star-btn {
+  width: 34px; height: 34px;
+  border: 2px solid var(--muted);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+.star-btn:hover { transform: scale(1.1); }
+.star-btn.lit { background: var(--accent); border-color: var(--line); box-shadow: var(--shadow-sm); }
+
+.score-summary {
+  background: linear-gradient(135deg, #fff 0%, #fff5fb 100%);
+  border: 3px solid var(--c7);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+.score-big { font-family: var(--font-display); font-weight: 900; font-size: 36px; color: var(--c7); }
+.radar-wrap { display: flex; justify-content: center; margin: 10px 0; }
+
+.comment-card {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.comment-name { font-weight: 900; font-size: 13px; margin-bottom: 6px; }
+.comment-stars { font-size: 16px; }
+</style>
+</head>
+<body data-step="7" data-tool-id="listener-check" data-tool-title="聞き手チェックカード" data-step-name="みんなに伝える">
+
+<main>
+  <div class="tool-intro">
+    発表を聞くときも<strong>大事な役割</strong>がある。<br>
+    「聞き手」として評価したり、自分の発表を評価してもらったりしよう。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎭</span> モードを選ぼう</div>
+    <div class="listener-mode">
+      <button class="mode-btn active" data-mode="listen">👂 友達の発表を評価する</button>
+      <button class="mode-btn" data-mode="self">🔍 自分の発表を振り返る</button>
+    </div>
+    <div id="modeDesc" style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">友達の発表を聞きながら、各項目を☆で評価しよう</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">👤</span> 発表者の名前</div>
+    <input type="text" id="presenterName" placeholder="例：田中くん、1班">
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">⭐</span> 評価</div>
+    <div id="evalList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">💬</span> コメント</div>
+    <div class="field">
+      <label class="field-label">よかったところ</label>
+      <textarea id="goodComment" placeholder="例：結果と考察をはっきり分けて話していた。" style="min-height:56px;"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">もっとよくなるアドバイス</label>
+      <textarea id="adviceComment" placeholder="例：声がもう少し大きいとよかった。" style="min-height:56px;"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📊</span> 評価まとめ</div>
+    <div class="score-summary" id="scoreSummary">
+      <div style="font-size:13px;color:var(--ink-soft);">評価を入力するとここに集計されるよ</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 この評価を保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="section" id="savedSection" style="display:none;">
+    <div class="section-title"><span class="emoji">📋</span> 保存した評価一覧</div>
+    <div id="savedList"></div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-small" id="clearSavedBtn">評価をすべてクリア</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🤝</span> 聞くときのコツ</div>
+    <ul class="hint-list">
+      <li>発表者の顔を見て聞こう</li>
+      <li>うなずきや反応で「聞いているよ」を伝えよう</li>
+      <li>疑問に思ったことをメモしておこう</li>
+      <li>自分と同じ考え・ちがう考えに注目しよう</li>
+      <li>発表が終わってから質問しよう</li>
+    </ul>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "listener-check";
+const EVAL_ITEMS = {
+  listen: [
+    { id: "result",   label: "結果が分かった",     desc: "何の結果かが伝わった" },
+    { id: "thinking", label: "考えが伝わった",     desc: "なぜそう考えたかが分かった" },
+    { id: "voice",    label: "声・速さ",            desc: "聞きやすかった" },
+    { id: "order",    label: "順序が分かった",      desc: "結果→考察→まとめの流れがあった" },
+    { id: "evidence", label: "根拠があった",        desc: "数字・事実を使って説明していた" },
+    { id: "interest", label: "興味が持てた",        desc: "もっと聞きたいと思った" }
+  ],
+  self: [
+    { id: "result",   label: "結果を正確に伝えた",  desc: "見えたことをそのまま言えた" },
+    { id: "thinking", label: "考察を伝えた",        desc: "なぜかを説明できた" },
+    { id: "voice",    label: "声・速さ",            desc: "聞こえる声でゆっくり話した" },
+    { id: "eye",      label: "目線",                desc: "聞き手を見て話した" },
+    { id: "order",    label: "順序通り",            desc: "結果→考察→まとめの順で話した" },
+    { id: "time",     label: "時間内",              desc: "目標時間に収まった" }
+  ]
+};
+
+const DEFAULT = { mode: "listen", ratings: {}, presenterName: "", goodComment: "", adviceComment: "", saved: [] };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.saved)) state.saved = [];
+if (!state.ratings) state.ratings = {};
+
+function renderModeButtons() {
+  document.querySelectorAll(".mode-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === state.mode);
+    b.addEventListener("click", () => {
+      state.mode = b.dataset.mode;
+      state.ratings = {};
+      renderModeButtons();
+      renderEval();
+      updateSummary();
+    });
+  });
+  document.getElementById("modeDesc").textContent =
+    state.mode === "listen" ? "友達の発表を聞きながら、各項目を☆で評価しよう" : "自分の発表を振り返って、各項目を☆で評価しよう";
+}
+
+function renderEval() {
+  const items = EVAL_ITEMS[state.mode];
+  document.getElementById("evalList").innerHTML = items.map(item => {
+    const rating = state.ratings[item.id] || 0;
+    return `
+      <div class="eval-row">
+        <div>
+          <div class="eval-row-label">${item.label}</div>
+          <div class="eval-row-desc">${item.desc}</div>
+        </div>
+        <div class="star-btns">
+          ${[1,2,3].map(n => `<button class="star-btn ${rating >= n ? 'lit' : ''}" data-id="${item.id}" data-n="${n}">${rating >= n ? '⭐' : '☆'}</button>`).join("")}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  document.querySelectorAll(".star-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id, n = parseInt(btn.dataset.n);
+      state.ratings[id] = (state.ratings[id] === n) ? n - 1 : n;
+      renderEval();
+      updateSummary();
+    });
+  });
+}
+
+function updateSummary() {
+  const items = EVAL_ITEMS[state.mode];
+  const total = items.reduce((acc, item) => acc + (state.ratings[item.id] || 0), 0);
+  const max = items.length * 3;
+  const pct = Math.round((total / max) * 100);
+
+  let msg = pct >= 85 ? "🌟 とてもよかった！" : pct >= 65 ? "👍 よかった！" : pct >= 40 ? "💪 もう少し！" : "📝 練習しよう";
+  const summary = document.getElementById("scoreSummary");
+  summary.innerHTML = `
+    <div class="score-big">${total} / ${max}</div>
+    <div style="font-size:14px;font-weight:700;margin:6px 0;">${msg}</div>
+    <div style="background:var(--bg);border-radius:8px;overflow:hidden;height:10px;border:2px solid var(--line);margin:8px 0;">
+      <div style="width:${pct}%;height:100%;background:var(--c7);transition:width 0.3s;"></div>
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);">${pct}点</div>
+  `;
+}
+
+// テキスト入力
+["presenterName","goodComment","adviceComment"].forEach(k => {
+  const el = document.getElementById(k);
+  el.value = state[k] || "";
+  el.addEventListener("input", () => { state[k] = el.value; });
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const items = EVAL_ITEMS[state.mode];
+  const total = items.reduce((acc, item) => acc + (state.ratings[item.id] || 0), 0);
+  const record = {
+    mode: state.mode,
+    name: state.presenterName || "（名前なし）",
+    total,
+    max: items.length * 3,
+    ratings: { ...state.ratings },
+    good: state.goodComment,
+    advice: state.adviceComment,
+    date: new Date().toLocaleString("ja-JP", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })
+  };
+  state.saved.unshift(record);
+  if (state.saved.length > 20) state.saved.pop();
+  RikaNavi.save(TOOL_ID, state);
+  renderSaved();
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${record.name}の評価を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+  RikaNavi.toast("💾 評価を保存したよ！");
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const items = EVAL_ITEMS[state.mode];
+  const lines = [`【${state.mode === "listen" ? "発表評価" : "自己評価"}】`, `対象：${state.presenterName || "（名前なし）"}`];
+  items.forEach(item => {
+    const r = state.ratings[item.id] || 0;
+    lines.push(`${item.label}：${"⭐".repeat(r)}${"☆".repeat(3-r)}`);
+  });
+  if (state.goodComment) lines.push(`\nよかったところ：${state.goodComment}`);
+  if (state.adviceComment) lines.push(`アドバイス：${state.adviceComment}`);
+  RikaNavi.copy(lines.join("\n"));
+});
+
+function renderSaved() {
+  const section = document.getElementById("savedSection");
+  const list = document.getElementById("savedList");
+  if (!state.saved.length) { section.style.display = "none"; return; }
+  section.style.display = "block";
+  list.innerHTML = state.saved.map((r, i) => `
+    <div class="comment-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="comment-name">${RikaNavi.escapeHTML(r.name)} <span style="font-size:11px;color:var(--ink-soft);">${r.date}</span></div>
+          <div class="comment-stars">${"⭐".repeat(Math.round(r.total/r.max*3))}${"☆".repeat(3-Math.round(r.total/r.max*3))} ${r.total}/${r.max}</div>
+          ${r.good ? `<div style="font-size:12px;margin-top:4px;">👍 ${RikaNavi.escapeHTML(r.good)}</div>` : ""}
+          ${r.advice ? `<div style="font-size:12px;margin-top:2px;">💡 ${RikaNavi.escapeHTML(r.advice)}</div>` : ""}
+        </div>
+        <button data-i="${i}" style="border:2px solid var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:700;">✕</button>
+      </div>
+    </div>
+  `).join("");
+  list.querySelectorAll("button[data-i]").forEach(b => {
+    b.addEventListener("click", () => {
+      state.saved.splice(parseInt(b.dataset.i), 1);
+      RikaNavi.save(TOOL_ID, state);
+      renderSaved();
+    });
+  });
+}
+
+document.getElementById("clearSavedBtn").addEventListener("click", () => {
+  if (!confirm("すべての評価をクリアしますか？")) return;
+  state.saved = [];
+  RikaNavi.save(TOOL_ID, state);
+  renderSaved();
+});
+
+renderModeButtons();
+renderEval();
+updateSummary();
+renderSaved();
+</script>
+</body>
+</html>

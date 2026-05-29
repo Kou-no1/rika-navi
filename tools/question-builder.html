@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>質問づくりサポーター ｜ 理科問題解決ナビ</title>
+<link rel="stylesheet" href="../common.css">
+<style>
+.q-type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.q-type-card {
+  background: white;
+  border: 2.5px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s;
+}
+.q-type-card:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-md); }
+.q-type-card.active { background: var(--c7); color: white; text-shadow: 1px 1px 0 rgba(0,0,0,.2); }
+.q-type-icon { font-size: 28px; margin-bottom: 4px; }
+.q-type-name { font-weight: 900; font-size: 13px; }
+.q-type-hint { font-size: 10px; margin-top: 3px; opacity: 0.8; }
+
+.question-item {
+  background: white;
+  border: 2.5px solid var(--muted);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.q-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.question-item textarea {
+  flex: 1;
+  border: 1.5px solid var(--muted);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  min-height: 44px;
+}
+.starter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.starter-chip {
+  background: var(--bg);
+  border: 2px solid var(--muted);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.starter-chip:hover { background: #fff0f8; border-color: var(--c7); }
+</style>
+</head>
+<body data-step="7" data-tool-id="question-builder" data-tool-title="質問づくりサポーター" data-step-name="みんなに伝える">
+
+<main>
+  <div class="tool-intro">
+    友達の発表を聞いて、<strong>よい質問</strong>をしよう。<br>
+    質問の種類を選ぶと、書き始めのことばが出てくるよ。
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🏷️</span> 質問の種類を選ぼう</div>
+    <div class="q-type-grid" id="qTypeGrid"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">✍️</span> 質問を書こう</div>
+    <div class="section-subtitle">書き始めのことばをタップすると、入力欄に入るよ</div>
+    <div class="starter-chips" id="starterChips"></div>
+    <div class="field">
+      <textarea id="currentQ" placeholder="ここに質問を書こう" style="min-height:70px;"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-strong" id="addQBtn">＋ 質問リストに追加</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">📋</span> 質問リスト</div>
+    <div id="questionList">
+      <div style="color:var(--ink-soft);text-align:center;padding:16px;font-size:13px;">質問を追加しよう</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-copy" id="copyBtn">📋 全質問コピー</button>
+      <button class="btn btn-strong" id="saveBtn">💾 保存</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div class="hint-box">
+    💡 <strong>よい質問のポイント</strong>：①「はい/いいえ」では答えられない ②発表者が考えを深められる ③やさしく、相手を責めない言い方
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="emoji">🎓</span> 質問するときのマナー</div>
+    <ul class="hint-list">
+      <li>発表が終わってから手を挙げよう</li>
+      <li>発表者の名前を言ってから質問しよう</li>
+      <li>短く、はっきり聞こう</li>
+      <li>答えてくれたら「ありがとう」を言おう</li>
+      <li>批判ではなく、「もっと知りたい」という気持ちで聞こう</li>
+    </ul>
+  </div>
+</main>
+
+<script src="../common.js"></script>
+<script>
+const TOOL_ID = "question-builder";
+const Q_TYPES = [
+  {
+    id: "reason",   icon: "🔗", name: "理由を聞く",   color: "var(--c6)",
+    starters: ["なぜ〜だと考えましたか？", "〜と考えた理由を教えてください。", "どうして〜になりましたか？"]
+  },
+  {
+    id: "detail",   icon: "🔍", name: "くわしく聞く",  color: "var(--c1)",
+    starters: ["〜をもう少しくわしく教えてください。", "〜のときに、どんなことが起きましたか？", "〜というのは、具体的には？"]
+  },
+  {
+    id: "compare",  icon: "⚖️", name: "比べて聞く",   color: "var(--c3)",
+    starters: ["もし〜を変えたら、どうなると思いますか？", "AとBでちがいがあったのはなぜですか？", "〜と〜では、どちらが〜でしたか？"]
+  },
+  {
+    id: "next",     icon: "🚀", name: "次を聞く",     color: "var(--c5)",
+    starters: ["次に調べてみたいことはありますか？", "もう一度やるとしたら、どこを変えますか？", "この結果から、他に分かることはありますか？"]
+  },
+  {
+    id: "agree",    icon: "🤝", name: "同意・共感",   color: "var(--c7)",
+    starters: ["わたしも〜と同じ結果でした。どう思いますか？", "〜という考えがとてもよかったと思いました。", "〜の気づきはなるほどだと思いました。"]
+  },
+  {
+    id: "diff",     icon: "💡", name: "ちがいを聞く",  color: "var(--c2)",
+    starters: ["わたしたちの結果は〜でしたが、なぜちがうと思いますか？", "〜についての考えがわたしとちがいました。どう思いますか？"]
+  }
+];
+
+const DEFAULT = { currentType: "reason", questions: [] };
+let state = RikaNavi.load(TOOL_ID, DEFAULT);
+if (!Array.isArray(state.questions)) state.questions = [];
+
+function renderTypeGrid() {
+  document.getElementById("qTypeGrid").innerHTML = Q_TYPES.map(t => `
+    <div class="q-type-card ${state.currentType === t.id ? 'active' : ''}" data-id="${t.id}"
+      style="${state.currentType === t.id ? `background:${t.color};` : ''}">
+      <div class="q-type-icon">${t.icon}</div>
+      <div class="q-type-name">${t.name}</div>
+    </div>
+  `).join("");
+  document.querySelectorAll(".q-type-card").forEach(c => {
+    c.addEventListener("click", () => {
+      state.currentType = c.dataset.id;
+      renderTypeGrid();
+      renderStarters();
+    });
+  });
+}
+
+function renderStarters() {
+  const type = Q_TYPES.find(t => t.id === state.currentType);
+  if (!type) return;
+  document.getElementById("starterChips").innerHTML = type.starters.map(s => `
+    <button class="starter-chip" data-s="${RikaNavi.escapeHTML(s)}">${s}</button>
+  `).join("");
+  document.querySelectorAll(".starter-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const ta = document.getElementById("currentQ");
+      ta.value = chip.dataset.s;
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    });
+  });
+}
+
+document.getElementById("addQBtn").addEventListener("click", () => {
+  const text = document.getElementById("currentQ").value.trim();
+  if (!text) { RikaNavi.toast("質問を書いてね"); return; }
+  state.questions.push({ id: Date.now(), type: state.currentType, text });
+  document.getElementById("currentQ").value = "";
+  RikaNavi.save(TOOL_ID, state);
+  renderQuestions();
+  RikaNavi.toast("✅ 質問を追加したよ！");
+});
+
+function renderQuestions() {
+  const wrap = document.getElementById("questionList");
+  if (!state.questions.length) {
+    wrap.innerHTML = '<div style="color:var(--ink-soft);text-align:center;padding:16px;font-size:13px;">質問を追加しよう</div>';
+    return;
+  }
+  wrap.innerHTML = state.questions.map((q, i) => {
+    const type = Q_TYPES.find(t => t.id === q.type);
+    return `
+      <div class="question-item">
+        <span class="q-badge" style="background:${type?.color || 'var(--bg)'};color:white;">${type?.icon || ''} ${type?.name || ''}</span>
+        <textarea data-i="${i}">${RikaNavi.escapeHTML(q.text)}</textarea>
+        <button data-i="${i}" style="border:2px solid var(--muted);background:var(--bg);border-radius:6px;padding:4px 8px;cursor:pointer;font-weight:900;font-size:11px;flex-shrink:0;">✕</button>
+      </div>
+    `;
+  }).join("");
+  wrap.querySelectorAll("textarea").forEach(ta => {
+    ta.addEventListener("input", () => { state.questions[parseInt(ta.dataset.i)].text = ta.value; });
+  });
+  wrap.querySelectorAll("button[data-i]").forEach(b => {
+    b.addEventListener("click", () => {
+      state.questions.splice(parseInt(b.dataset.i), 1);
+      RikaNavi.save(TOOL_ID, state);
+      renderQuestions();
+    });
+  });
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  RikaNavi.save(TOOL_ID, state);
+  const ind = document.getElementById("saveIndicator");
+  ind.textContent = `✓ ${RikaNavi.getTeam()}の質問を保存しました`;
+  setTimeout(() => ind.textContent = "", 2500);
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  if (!state.questions.length) { RikaNavi.toast("質問がないよ"); return; }
+  const lines = ["【質問リスト】"];
+  state.questions.forEach((q, i) => {
+    const type = Q_TYPES.find(t => t.id === q.type);
+    lines.push(`Q${i+1}（${type?.name || ""}）：${q.text}`);
+  });
+  RikaNavi.copy(lines.join("\n"));
+});
+
+renderTypeGrid();
+renderStarters();
+renderQuestions();
+</script>
+</body>
+</html>
